@@ -5,18 +5,8 @@ using System.Collections;
 public class GameManager : MonoBehaviour
 {
     public Text KeyText;
-
-    // Use this for initialization
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
+    public GameObject TextItemPrefab;
+    public GameObject RoomListPanel;
 
     public void OnCreateGameButtonClicked()
     {
@@ -65,6 +55,9 @@ public class GameManager : MonoBehaviour
             if(KeyText != null)
             {
                 KeyText.text = result.GetData().room_key;
+                GameObject Item = GameObject.Instantiate(TextItemPrefab);
+                Item.GetComponent<Text>().text = result.GetData().players[0].player_id;
+                Item.transform.SetParent(RoomListPanel.transform);
             }
         }
         else
