@@ -11,10 +11,8 @@ public class GameManager : MonoBehaviour
     public void MainMenu_OnCreateGameButtonClicked()
     {
         ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        GameObject MainMenuScreen = ScreenMgr.GetMainMenuScreen();
-        GameObject CreateGameScreen = ScreenMgr.GetCreateGameScreen();
-        ScreenMgr.TransitionScreenOff(MainMenuScreen.GetComponent<Animator>());
-        ScreenMgr.TransitionScreenOn(CreateGameScreen.GetComponent<Animator>());
+        ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.MainMenu);
+        ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.CreateGame);
 
     }
 
@@ -34,33 +32,26 @@ public class GameManager : MonoBehaviour
     public void CreateMenu_OnClickedBackButton()
     {
         ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        GameObject MainMenuScreen = ScreenMgr.GetMainMenuScreen();
-        GameObject CreateGameScreen = ScreenMgr.GetCreateGameScreen();
-        ScreenMgr.TransitionScreenOn(MainMenuScreen.GetComponent<Animator>());
-        ScreenMgr.TransitionScreenOff(CreateGameScreen.GetComponent<Animator>());
+        ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
+        ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
     }
 
     public void CreateMenu_OnClickedCreateGame()
     {
         ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        GameObject CreateGameScreen = ScreenMgr.GetCreateGameScreen();
-        GameObject LobbyScreen = ScreenMgr.GetLobbyScreen();
         OnlineServicesManger OnlineServices = OnlineServicesManger.GetInstance();
         if (OnlineServices.IsConnected())
         {
-            CreateGameScreen CGScreen = CreateGameScreen.GetComponent<CreateGameScreen>();
-            if(CGScreen.GetInputText().Length <= 0)
+            CreateGameScreen CreateGameScreen = ScreenMgr.GetCreateGameScreen();
+            if (CreateGameScreen.GetInputText().Length <= 0)
             {
-                GameObject Popup = ScreenMgr.GetOKPopupScreen();
-                OKPopupScreen OKPopup = Popup.GetComponent<OKPopupScreen>();
-                OKPopup.SetMessageText("Please enter a name first");
-                ScreenMgr.TransitionScreenOn(Popup.GetComponent<Animator>());
+                ScreenMgr.ShowOKPopup("Please enter a name first");
             }
             else
             {
                 OnlineServices.CreateGame(OnCreateGameComplete);
-                ScreenMgr.TransitionScreenOn(LobbyScreen.GetComponent<Animator>());
-                ScreenMgr.TransitionScreenOff(CreateGameScreen.GetComponent<Animator>());
+                ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
+                ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.Lobby);
             }
 
 
@@ -74,17 +65,14 @@ public class GameManager : MonoBehaviour
     public void LobbyMenu_OnClickedBack()
     {
         ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        GameObject MainMenuScreen = ScreenMgr.GetMainMenuScreen();
-        GameObject LobbyMenuScreen = ScreenMgr.GetLobbyScreen();
-        ScreenMgr.TransitionScreenOn(MainMenuScreen.GetComponent<Animator>());
-        ScreenMgr.TransitionScreenOff(LobbyMenuScreen.GetComponent<Animator>());
+        ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.Lobby);
+        ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
     }
 
     public void OKPopup_OnClickedOK()
     {
         ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        GameObject Popup = ScreenMgr.GetOKPopupScreen();
-        ScreenMgr.TransitionScreenOff(Popup.GetComponent<Animator>());
+        ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.OKPopup);
     }
 
     void OnAuthenticationCompleted(AuthenticationRequestResult result)
