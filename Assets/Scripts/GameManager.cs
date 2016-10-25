@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System.Collections.Generic;
 
 public class GameManager : MonoBehaviour
 {
@@ -61,7 +62,7 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                OnlineServices.CreateGame(OnCreateGameComplete, CreateGameScreen.GetInputText());
+                OnlineServices.CreateGame(OnCreateJoinGameComplete, CreateGameScreen.GetInputText());
                 ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
                 ScreenMgr.ShowSpinner("Creating Game...");
             }
@@ -91,8 +92,8 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                OnlineServices.JoinGame(OnJoinGameComplete, JoinGameScreen.GetNameText(), JoinGameScreen.GetRoomKeyText());
-                ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
+                OnlineServices.JoinGame(OnCreateJoinGameComplete, JoinGameScreen.GetNameText(), JoinGameScreen.GetRoomKeyText());
+                ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.JoinGame);
                 ScreenMgr.ShowSpinner("Joining Game...");
             }
 
@@ -139,29 +140,34 @@ public class GameManager : MonoBehaviour
 
     }
 
-    void OnCreateGameComplete(JoinCreateGameRequestResult result)
+    void OnCreateJoinGameComplete(JoinCreateGameRequestResult result)
     {
         ScreenManager ScreenMgr = ScreenManager.GetInstance();
         if (result.GetRequestResult() == JoinCreateGameRequestResult.RequestResult.Success)
         {
             if (KeyText != null)
             {
-                KeyText.text = result.GetData().room_key;
-                GameObject Item = GameObject.Instantiate(TextItemPrefab);
-                Item.GetComponent<Text>().text = result.GetData().players[0].player_id;
-                Item.transform.SetParent(RoomListPanel.transform);
+                JoinCreateGameRequestResult.Data data = result.GetData();
+                KeyText.text = data.room_key;
+
+                foreach (JoinCreateGameRequestResult.Player player in data.players)
+                {
+                    
+                    GameObject Item = GameObject.Instantiate(TextItemPrefab);
+
+                    Item.GetComponent<Text>().text = player.player_id;
+                    Item.transform.SetParent(RoomListPanel.transform);
+
+                }
+
                 ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
                 ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.Lobby);
+
             }
         }
         else
         {
 
         }
-    }
-
-    void OnJoinGameComplete(JoinCreateGameRequestResult result)
-    {
-
     }
 }
