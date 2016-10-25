@@ -33,7 +33,7 @@ public class ScreenManager : MonoBehaviour
             Destroy(this.gameObject);
         }
 
-        TransitionScreenOn(MainMenuScreen.GetComponent<Animator>());
+        //TransitionScreenOn(MainMenuScreen.GetComponent<Animator>());
     }
 
     public static ScreenManager GetInstance()
@@ -117,5 +117,13 @@ public class ScreenManager : MonoBehaviour
         OKPopupScreen OKPopup = Popup.GetComponent<OKPopupScreen>();
         OKPopup.SetMessageText("Please enter a name first");
         TransitionScreenOn(ScreenID.OKPopup);
+    }
+
+    public void ShowSpinner(string Msg)
+    {
+        GameObject SpinnerObj = GetScreenObj(ScreenID.Spinner);
+        SpinnerScreen Spinner = SpinnerObj.GetComponent<SpinnerScreen>();
+        Spinner.SetMessageText("Connecting");
+        TransitionScreenOn(ScreenID.Spinner);
     }
 }

@@ -7,6 +7,26 @@ public class GameManager : MonoBehaviour
     public Text KeyText;
     public GameObject TextItemPrefab;
     public GameObject RoomListPanel;
+    private bool Initalized = false;
+
+
+    public void Start()
+    {
+        ScreenManager ScreenMgr = ScreenManager.GetInstance();
+        ScreenMgr.ShowSpinner("Connecting...");
+    }
+
+    public void Update()
+    {
+        OnlineServicesManger OnlineServices = OnlineServicesManger.GetInstance();
+        if (!Initalized && OnlineServices.IsAvailable())
+        {
+            OnlineServices.Authenticate(OnAuthenticationCompleted);
+            Initalized = true;
+        }
+    }
+
+    
 
     public void MainMenu_OnCreateGameButtonClicked()
     {
@@ -79,7 +99,9 @@ public class GameManager : MonoBehaviour
     {
         if (result.GetRequestResult() == AuthenticationRequestResult.RequestResult.Success)
         {
-
+            ScreenManager ScreenMgr = ScreenManager.GetInstance();
+            ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
+            ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
         }
         else
         {
