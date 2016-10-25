@@ -26,8 +26,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    
-
     public void MainMenu_OnCreateGameButtonClicked()
     {
         ScreenManager ScreenMgr = ScreenManager.GetInstance();
@@ -38,15 +36,9 @@ public class GameManager : MonoBehaviour
 
     public void MainMenu_OnJoinGameButtonClicked()
     {
-        //OnlineServicesManger OnlineServices = OnlineServicesManger.GetInstance();
-        //if (OnlineServices.IsConnected())
-        //{
-
-        //}
-        //else
-        //{
-        //    // Popup message and try to connect
-        //}
+        ScreenManager ScreenMgr = ScreenManager.GetInstance();
+        ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.MainMenu);
+        ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.JoinGame);
     }
 
     public void CreateMenu_OnClickedBackButton()
@@ -69,9 +61,9 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                OnlineServices.CreateGame(OnCreateGameComplete);
+                OnlineServices.CreateGame(OnCreateGameComplete, CreateGameScreen.GetInputText());
                 ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
-                ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.Lobby);
+                ScreenMgr.ShowSpinner("Creating Game...");
             }
 
 
@@ -82,10 +74,47 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void JoinMenu_OnClickedJoingame()
+    {
+        ScreenManager ScreenMgr = ScreenManager.GetInstance();
+        OnlineServicesManger OnlineServices = OnlineServicesManger.GetInstance();
+        if (OnlineServices.IsConnected())
+        {
+            JoinGameScreen JoinGameScreen = ScreenMgr.GetJoinGameScreen();
+            if (JoinGameScreen.GetNameText().Length <= 0)
+            {
+                ScreenMgr.ShowOKPopup("Please enter a name first");
+            }
+            else if (JoinGameScreen.GetRoomKeyText().Length <= 0)
+            {
+                ScreenMgr.ShowOKPopup("Please enter a room key first");
+            }
+            else
+            {
+                OnlineServices.JoinGame(OnJoinGameComplete, JoinGameScreen.GetNameText(), JoinGameScreen.GetRoomKeyText());
+                ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
+                ScreenMgr.ShowSpinner("Joining Game...");
+            }
+
+        }
+        else
+        {
+            // Popup message and try to connect
+        }
+    }
+
+
     public void LobbyMenu_OnClickedBack()
     {
         ScreenManager ScreenMgr = ScreenManager.GetInstance();
         ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.Lobby);
+        ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
+    }
+
+    public void JoinMenu_OnClickedBack()
+    {
+        ScreenManager ScreenMgr = ScreenManager.GetInstance();
+        ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.JoinGame);
         ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
     }
 
@@ -110,21 +139,29 @@ public class GameManager : MonoBehaviour
 
     }
 
-    void OnCreateGameComplete(CreateGameRequestResult result)
+    void OnCreateGameComplete(JoinCreateGameRequestResult result)
     {
-        if (result.GetRequestResult() == CreateGameRequestResult.RequestResult.Success)
+        ScreenManager ScreenMgr = ScreenManager.GetInstance();
+        if (result.GetRequestResult() == JoinCreateGameRequestResult.RequestResult.Success)
         {
-            if(KeyText != null)
+            if (KeyText != null)
             {
                 KeyText.text = result.GetData().room_key;
                 GameObject Item = GameObject.Instantiate(TextItemPrefab);
                 Item.GetComponent<Text>().text = result.GetData().players[0].player_id;
                 Item.transform.SetParent(RoomListPanel.transform);
+                ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
+                ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.Lobby);
             }
         }
         else
         {
 
         }
+    }
+
+    void OnJoinGameComplete(JoinCreateGameRequestResult result)
+    {
+
     }
 }

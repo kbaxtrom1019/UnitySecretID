@@ -7,6 +7,7 @@ public class ScreenManager : MonoBehaviour
     {
        MainMenu,
        CreateGame,
+       JoinGame,
        Lobby,
        OKPopup,
        Spinner 
@@ -15,6 +16,7 @@ public class ScreenManager : MonoBehaviour
 
     public GameObject MainMenuScreen;
     public GameObject CreateGameScreen;
+    public GameObject JoinGameScreen;
     public GameObject LobbyScreen;
     public GameObject OKPopupScreen;
     public GameObject SpinnerScreen;
@@ -33,7 +35,12 @@ public class ScreenManager : MonoBehaviour
             Destroy(this.gameObject);
         }
 
-        //TransitionScreenOn(MainMenuScreen.GetComponent<Animator>());
+        MainMenuScreen.SetActive(true);
+        CreateGameScreen.SetActive(true);
+        JoinGameScreen.SetActive(true);
+        LobbyScreen.SetActive(true);
+        OKPopupScreen.SetActive(true);
+        SpinnerScreen.SetActive(true);
     }
 
     public static ScreenManager GetInstance()
@@ -58,6 +65,9 @@ public class ScreenManager : MonoBehaviour
             case ScreenID.CreateGame:
                 return CreateGameScreen;
 
+            case ScreenID.JoinGame:
+                return JoinGameScreen;
+
             case ScreenID.Lobby:
                 return LobbyScreen;
 
@@ -79,6 +89,16 @@ public class ScreenManager : MonoBehaviour
         if (Obj != null)
         {
             return Obj.GetComponent<CreateGameScreen>();
+        }
+        return null;
+    }
+
+    public JoinGameScreen GetJoinGameScreen()
+    {
+        GameObject Obj = GetScreenObj(ScreenID.JoinGame);
+        if (Obj != null)
+        {
+            return Obj.GetComponent<JoinGameScreen>();
         }
         return null;
     }

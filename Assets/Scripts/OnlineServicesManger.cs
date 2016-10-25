@@ -38,7 +38,7 @@ public class AuthenticationRequestResult
 
 
 
-public class CreateGameRequestResult
+public class JoinCreateGameRequestResult
 {
     public enum RequestResult
     {
@@ -63,7 +63,7 @@ public class CreateGameRequestResult
     private GameSparks.Api.Responses.LogEventResponse response;
     private Data data;
 
-    public CreateGameRequestResult(GameSparks.Api.Responses.LogEventResponse requestResponse)
+    public JoinCreateGameRequestResult(GameSparks.Api.Responses.LogEventResponse requestResponse)
     {
         if (requestResponse.HasErrors)
         {
@@ -110,7 +110,8 @@ public class CreateGameRequestResult
 public class OnlineServicesManger : MonoBehaviour
 {
     public delegate void OnAuthenticationComplete(AuthenticationRequestResult result);
-    public delegate void OnCreateGameComplete(CreateGameRequestResult result);
+    public delegate void OnCreateGameComplete(JoinCreateGameRequestResult result);
+    public delegate void OnJoinGameComplete(JoinCreateGameRequestResult result);
 
     private static OnlineServicesManger instance;
     public void Awake()
@@ -165,10 +166,10 @@ public class OnlineServicesManger : MonoBehaviour
         });
     }
 
-    public void CreateGame(OnCreateGameComplete callback)
+    public void CreateGame(OnCreateGameComplete callback, string playerName)
     {
         GSRequestData data = new GSRequestData();
-        data.AddString("TestParam", "WorldParam");
+        data.AddString("player_name", playerName);
         new LogEventRequest()
         .SetEventKey("CREATE_GAME")
         .SetEventAttribute("cg_data", data)
@@ -176,10 +177,28 @@ public class OnlineServicesManger : MonoBehaviour
 
             if(callback != null)
             {
-                CreateGameRequestResult result = new CreateGameRequestResult(response);
+                JoinCreateGameRequestResult result = new JoinCreateGameRequestResult(response);
                 callback(result);
             }
     });
+    }
+
+    public void JoinGame(OnJoinGameComplete callback, string playerName, string roomKey)
+    {
+        GSRequestData data = new GSRequestData();
+        data.AddString("player_name", playerName);
+        data.AddString("room_key", roomKey);
+        new LogEventRequest()
+        .SetEventKey("JOIN_GAME")
+        .SetEventAttribute("jg_data", data)
+        .Send((response) => {
+
+            if (callback != null)
+            {
+                JoinCreateGameRequestResult result = new JoinCreateGameRequestResult(response);
+                callback(result);
+            }
+        });
     }
 
     void OnGUI()
