@@ -140,17 +140,17 @@ public class GameManager : MonoBehaviour
 
     }
 
-    void OnCreateJoinGameComplete(JoinCreateGameRequestResult result)
+    void OnCreateJoinGameComplete(LobbyGameRequestResult result)
     {
         ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        if (result.GetRequestResult() == JoinCreateGameRequestResult.RequestResult.Success)
+        if (result.GetRequestResult() == LobbyGameRequestResult.RequestResult.Success)
         {
             if (KeyText != null)
             {
-                JoinCreateGameRequestResult.Data data = result.GetData();
+                LobbyGameRequestResult.Data data = result.GetData();
                 KeyText.text = data.room_key;
 
-                foreach (JoinCreateGameRequestResult.Player player in data.players)
+                foreach (LobbyGameRequestResult.Player player in data.players)
                 {
                     
                     GameObject Item = GameObject.Instantiate(TextItemPrefab);

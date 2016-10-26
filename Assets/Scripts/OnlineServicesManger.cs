@@ -38,7 +38,7 @@ public class AuthenticationRequestResult
 
 
 
-public class JoinCreateGameRequestResult
+public class LobbyGameRequestResult
 {
     public enum RequestResult
     {
@@ -49,6 +49,7 @@ public class JoinCreateGameRequestResult
     public class Player
     {
         public string player_id;
+        public string player_name;
     };
 
     public class Data
@@ -63,7 +64,7 @@ public class JoinCreateGameRequestResult
     private GameSparks.Api.Responses.LogEventResponse response;
     private Data data;
 
-    public JoinCreateGameRequestResult(GameSparks.Api.Responses.LogEventResponse requestResponse)
+    public LobbyGameRequestResult(GameSparks.Api.Responses.LogEventResponse requestResponse)
     {
         if (requestResponse.HasErrors)
         {
@@ -110,8 +111,8 @@ public class JoinCreateGameRequestResult
 public class OnlineServicesManger : MonoBehaviour
 {
     public delegate void OnAuthenticationComplete(AuthenticationRequestResult result);
-    public delegate void OnCreateGameComplete(JoinCreateGameRequestResult result);
-    public delegate void OnJoinGameComplete(JoinCreateGameRequestResult result);
+    public delegate void OnCreateGameComplete(LobbyGameRequestResult result);
+    public delegate void OnJoinGameComplete(LobbyGameRequestResult result);
 
     private static OnlineServicesManger instance;
     public void Awake()
@@ -177,7 +178,7 @@ public class OnlineServicesManger : MonoBehaviour
 
             if(callback != null)
             {
-                JoinCreateGameRequestResult result = new JoinCreateGameRequestResult(response);
+                LobbyGameRequestResult result = new LobbyGameRequestResult(response);
                 callback(result);
             }
     });
@@ -195,10 +196,15 @@ public class OnlineServicesManger : MonoBehaviour
 
             if (callback != null)
             {
-                JoinCreateGameRequestResult result = new JoinCreateGameRequestResult(response);
+                LobbyGameRequestResult result = new LobbyGameRequestResult(response);
                 callback(result);
             }
         });
+    }
+
+    public void LeaveGame(OnJoinGameComplete callback)
+    {
+
     }
 
     void OnGUI()
