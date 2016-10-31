@@ -5,114 +5,15 @@ using GameSparks.Api;
 using GameSparks.Core;
 using GameSparks.Api.Requests;
 
-public class AuthenticationRequestResult 
-{
-    public enum RequestResult
-    {
-        Success,
-        Failure
-    };
-
-    public RequestResult result;
-    private GameSparks.Api.Responses.AuthenticationResponse response;
-
-    public AuthenticationRequestResult(GameSparks.Api.Responses.AuthenticationResponse requestResponse)
-    {
-        if (requestResponse.HasErrors)
-        {
-            result = RequestResult.Failure;
-        }
-        else
-        {
-            result = RequestResult.Success;
-        }
-
-        response = requestResponse;
-    }
-
-    public RequestResult GetRequestResult()
-    {
-        return result;
-    }
-};
-
-
-
-public class LobbyGameRequestResult
-{
-    public enum RequestResult
-    {
-        Success,
-        Failure
-    };
-
-    public class Player
-    {
-        public string player_id;
-        public string player_name;
-    };
-
-    public class Data
-    {
-        public string room_key;
-        public string errors;
-        public List<Player> players = new List<Player>();
-    };
-
-    public RequestResult result;
-    private string roomKey;
-    private GameSparks.Api.Responses.LogEventResponse response;
-    private Data data;
-
-    public LobbyGameRequestResult(GameSparks.Api.Responses.LogEventResponse requestResponse)
-    {
-        if (requestResponse.HasErrors)
-        {
-            result = RequestResult.Failure;
-        }
-        else
-        {
-            result = RequestResult.Success;
-        }
-
-        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
-        data = JsonUtility.FromJson<Data>(resultData.JSON);
-        List<GSData> playerList = resultData.GetGSDataList("players");
-        if(playerList != null)
-        {
-            data.players = new List<Player>();
-            foreach (GSData playerData in playerList)
-            {
-                Player player = JsonUtility.FromJson<Player>(playerData.JSON);
-                data.players.Add(player);
-            }
-        }
-
-        response = requestResponse;
-    }
-
-    public RequestResult GetRequestResult()
-    {
-        return result;
-    }
-
-    public string GetRoomKey()
-    {
-        return roomKey;
-    }
-
-    public Data GetData()
-    {
-        return data;
-    }
-};
-
 
 public class OnlineServicesManger : MonoBehaviour
 {
     public delegate void OnAuthenticationComplete(AuthenticationRequestResult result);
-    public delegate void OnCreateGameComplete(LobbyGameRequestResult result);
-    public delegate void OnJoinGameComplete(LobbyGameRequestResult result);
+    public delegate void OnCreateLobbyComplete(CreateLobbyRequestResult result);
+    public delegate void OnJoinLobbyComplete(JoinLobbyRequestResult result);
+    public delegate void OnLeaveLobbyComplete(LeaveLobbyRequestResult result);
+    public delegate void OnRefreshLobbyComplete(RefreshLobbyRequestResult result);
+
 
     private static OnlineServicesManger instance;
     public void Awake()
@@ -167,24 +68,45 @@ public class OnlineServicesManger : MonoBehaviour
         });
     }
 
-    public void CreateGame(OnCreateGameComplete callback, string playerName)
+    public void CreateLobby(OnCreateLobbyComplete callback, string playerName)
     {
-        GSRequestData data = new GSRequestData();
-        data.AddString("player_name", playerName);
+        GSRequestData leavedata = new GSRequestData();
         new LogEventRequest()
-        .SetEventKey("CREATE_GAME")
-        .SetEventAttribute("cg_data", data)
-        .Send((response) => {
+        .SetEventKey("LEAVE_GAME")
+        .SetEventAttribute("lg_data", leavedata)
+        .Send((leaveResponse) => {
 
-            if(callback != null)
+            LeaveLobbyRequestResult leaveResult = new LeaveLobbyRequestResult(leaveResponse);
+            if(leaveResult.GetRequestResult() == LeaveLobbyRequestResult.RequestResult.Success)
             {
-                LobbyGameRequestResult result = new LobbyGameRequestResult(response);
-                callback(result);
+                GSRequestData data = new GSRequestData();
+                data.AddString("player_name", playerName);
+                new LogEventRequest()
+                .SetEventKey("CREATE_GAME")
+                .SetEventAttribute("cg_data", data)
+                .Send((createResponse) => {
+
+                    if (callback != null)
+                    {
+                        CreateLobbyRequestResult createResult = new CreateLobbyRequestResult(createResponse);
+                        callback(createResult);
+                    }
+                });
             }
-    });
+            else
+            {
+                if (callback != null)
+                {
+                    CreateLobbyRequestResult createResult = new CreateLobbyRequestResult(leaveResponse);
+                    callback(createResult);
+                }
+            }
+        });
+
+
     }
 
-    public void JoinGame(OnJoinGameComplete callback, string playerName, string roomKey)
+    public void JoinLobby(OnJoinLobbyComplete callback, string playerName, string roomKey)
     {
         GSRequestData data = new GSRequestData();
         data.AddString("player_name", playerName);
@@ -196,15 +118,42 @@ public class OnlineServicesManger : MonoBehaviour
 
             if (callback != null)
             {
-                LobbyGameRequestResult result = new LobbyGameRequestResult(response);
+                JoinLobbyRequestResult result = new JoinLobbyRequestResult(response);
                 callback(result);
             }
         });
     }
 
-    public void LeaveGame(OnJoinGameComplete callback)
+    public void LeaveLobby(OnLeaveLobbyComplete callback)
     {
+        GSRequestData data = new GSRequestData();
+        new LogEventRequest()
+        .SetEventKey("LEAVE_GAME")
+        .SetEventAttribute("lg_data", data)
+        .Send((response) => {
 
+            if (callback != null)
+            {
+                LeaveLobbyRequestResult result = new LeaveLobbyRequestResult(response);
+                callback(result);
+            }
+        });
+    }
+
+    public void RefreshLobby(OnRefreshLobbyComplete callback)
+    {
+        GSRequestData data = new GSRequestData();
+        new LogEventRequest()
+        .SetEventKey("REFRESH_GAME")
+        .SetEventAttribute("rg_data", data)
+        .Send((response) => {
+
+            if (callback != null)
+            {
+                RefreshLobbyRequestResult result = new RefreshLobbyRequestResult(response);
+                callback(result);
+            }
+        });
     }
 
     void OnGUI()

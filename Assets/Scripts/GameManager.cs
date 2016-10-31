@@ -5,69 +5,88 @@ using System.Collections.Generic;
 
 public class GameManager : MonoBehaviour
 {
+    public enum GameState
+    {
+        None,
+        Lobby,
+        RefreshingLobby,
+    };
+
     public Text KeyText;
     public GameObject TextItemPrefab;
     public GameObject RoomListPanel;
     private bool Initalized = false;
-
+    private GameState CurrentState = GameState.None;
+    private float RefreshTimer;
+    private const float RefreshTime = 2.0f;
+    private string LocalPlayerID = null;
 
     public void Start()
     {
-        ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        ScreenMgr.ShowSpinner("Connecting...");
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        screenMgr.ShowSpinner("Connecting...");
     }
 
     public void Update()
     {
-        OnlineServicesManger OnlineServices = OnlineServicesManger.GetInstance();
-        if (!Initalized && OnlineServices.IsAvailable())
+        OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
+        if (!Initalized && onlineServices.IsAvailable())
         {
-            OnlineServices.Authenticate(OnAuthenticationCompleted);
+            onlineServices.Authenticate(OnAuthenticationCompleted);
             Initalized = true;
         }
+
+        if(CurrentState == GameState.Lobby)
+        {
+            RefreshTimer -= Time.deltaTime;
+            if(RefreshTimer <= 0.0f)
+            {
+                CurrentState = GameState.RefreshingLobby;
+                onlineServices.RefreshLobby(OnRefreshLobbyComplete);
+            }
+        }
+
     }
 
     public void MainMenu_OnCreateGameButtonClicked()
     {
-        ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.MainMenu);
-        ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.CreateGame);
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.MainMenu);
+        screenMgr.TransitionScreenOn(ScreenManager.ScreenID.CreateGame);
 
     }
 
     public void MainMenu_OnJoinGameButtonClicked()
     {
-        ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.MainMenu);
-        ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.JoinGame);
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.MainMenu);
+        screenMgr.TransitionScreenOn(ScreenManager.ScreenID.JoinGame);
     }
 
     public void CreateMenu_OnClickedBackButton()
     {
-        ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
-        ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
+        screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
     }
 
     public void CreateMenu_OnClickedCreateGame()
     {
-        ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        OnlineServicesManger OnlineServices = OnlineServicesManger.GetInstance();
-        if (OnlineServices.IsConnected())
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
+        if (onlineServices.IsConnected())
         {
-            CreateGameScreen CreateGameScreen = ScreenMgr.GetCreateGameScreen();
-            if (CreateGameScreen.GetInputText().Length <= 0)
+            CreateGameScreen createScreen = screenMgr.GetCreateGameScreen();
+            if (createScreen.GetInputText().Length <= 0)
             {
-                ScreenMgr.ShowOKPopup("Please enter a name first");
+                screenMgr.ShowOKPopup("Please enter a name first");
             }
             else
             {
-                OnlineServices.CreateGame(OnCreateJoinGameComplete, CreateGameScreen.GetInputText());
-                ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
-                ScreenMgr.ShowSpinner("Creating Game...");
+                onlineServices.CreateLobby(OnCreateGameComplete, createScreen.GetInputText());
+                screenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
+                screenMgr.ShowSpinner("Creating Game...");
             }
-
-
         }
         else
         {
@@ -77,24 +96,24 @@ public class GameManager : MonoBehaviour
 
     public void JoinMenu_OnClickedJoingame()
     {
-        ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        OnlineServicesManger OnlineServices = OnlineServicesManger.GetInstance();
-        if (OnlineServices.IsConnected())
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
+        if (onlineServices.IsConnected())
         {
-            JoinGameScreen JoinGameScreen = ScreenMgr.GetJoinGameScreen();
-            if (JoinGameScreen.GetNameText().Length <= 0)
+            JoinGameScreen joinScreen = screenMgr.GetJoinGameScreen();
+            if (joinScreen.GetNameText().Length <= 0)
             {
-                ScreenMgr.ShowOKPopup("Please enter a name first");
+                screenMgr.ShowOKPopup("Please enter a name first");
             }
-            else if (JoinGameScreen.GetRoomKeyText().Length <= 0)
+            else if (joinScreen.GetRoomKeyText().Length <= 0)
             {
-                ScreenMgr.ShowOKPopup("Please enter a room key first");
+                screenMgr.ShowOKPopup("Please enter a room key first");
             }
             else
             {
-                OnlineServices.JoinGame(OnCreateJoinGameComplete, JoinGameScreen.GetNameText(), JoinGameScreen.GetRoomKeyText());
-                ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.JoinGame);
-                ScreenMgr.ShowSpinner("Joining Game...");
+                onlineServices.JoinLobby(OnJoinGameComplete, joinScreen.GetNameText(), joinScreen.GetRoomKeyText());
+                screenMgr.TransitionScreenOff(ScreenManager.ScreenID.JoinGame);
+                screenMgr.ShowSpinner("Joining Game...");
             }
 
         }
@@ -107,67 +126,181 @@ public class GameManager : MonoBehaviour
 
     public void LobbyMenu_OnClickedBack()
     {
-        ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.Lobby);
-        ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Lobby);
+        screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
+        OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
+        onlineServices.LeaveLobby(null);
     }
 
     public void JoinMenu_OnClickedBack()
     {
-        ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.JoinGame);
-        ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.JoinGame);
+        screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
     }
 
     public void OKPopup_OnClickedOK()
     {
-        ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.OKPopup);
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.OKPopup);
     }
 
     void OnAuthenticationCompleted(AuthenticationRequestResult result)
     {
         if (result.GetRequestResult() == AuthenticationRequestResult.RequestResult.Success)
         {
-            ScreenManager ScreenMgr = ScreenManager.GetInstance();
-            ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
-            ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
+            ScreenManager screenMgr = ScreenManager.GetInstance();
+            screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
+            screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
+            LocalPlayerID = result.GetPlayerID();
         }
         else
         {
-
+            Debug.LogError("Authention Error");
         }
 
     }
 
-    void OnCreateJoinGameComplete(LobbyGameRequestResult result)
+    void OnCreateGameComplete(CreateLobbyRequestResult result)
     {
-        ScreenManager ScreenMgr = ScreenManager.GetInstance();
-        if (result.GetRequestResult() == LobbyGameRequestResult.RequestResult.Success)
+        if (result.GetRequestResult() == CreateLobbyRequestResult.RequestResult.Success)
         {
-            if (KeyText != null)
+            CreateLobbyRequestResult.Data data = result.GetData();
+            SetupLobby(data.room_key, data.players);
+
+        }
+        else
+        {
+            Debug.LogError("Create Game Error");
+        }
+    }
+
+    void OnJoinGameComplete(JoinLobbyRequestResult result)
+    {
+        if (result.GetRequestResult() == JoinLobbyRequestResult.RequestResult.Success)
+        {
+            JoinLobbyRequestResult.Data data = result.GetData();
+            SetupLobby(data.room_key, data.players);
+        }
+        else
+        {
+            Debug.LogError("Join Game Error");
+        }
+    }
+
+    void OnRefreshLobbyComplete(RefreshLobbyRequestResult result)
+    {
+        if (result.GetRequestResult() == RefreshLobbyRequestResult.RequestResult.Success)
+        {
+            RefreshLobbyRequestResult.Data data = result.GetData();
+            UpdateLobby(data.players);
+        }
+        else
+        {
+            Debug.LogError("Refresh Game Error");
+        }
+        CurrentState = GameState.Lobby;
+        ResetRefreshTimer();
+    }
+
+    void ResetRefreshTimer()
+    {
+        RefreshTimer = RefreshTime;
+    }
+
+    void AddPlayerToLobby(LobbyPlayer player)
+    {
+        GameObject item = GameObject.Instantiate(TextItemPrefab);
+        LobbyOccupant occupant = item.GetComponent<LobbyOccupant>();
+        occupant.SetPlayerNameText(player.player_name, player.player_id);
+        item.transform.SetParent(RoomListPanel.transform);
+    }
+
+    void SetupLobby(string roomKey, List<LobbyPlayer> players)
+    {
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        KeyText.text = roomKey;
+
+        for(int i = 0; i < RoomListPanel.transform.childCount; ++i)
+        {
+            GameObject.Destroy(RoomListPanel.transform.GetChild(i).gameObject);
+        }
+
+        foreach (LobbyPlayer player in players)
+        {
+            AddPlayerToLobby(player);
+        }
+
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
+        screenMgr.TransitionScreenOn(ScreenManager.ScreenID.Lobby);
+        CurrentState = GameState.Lobby;
+        ResetRefreshTimer();
+    }
+
+    void UpdateLobby(List<LobbyPlayer> players)
+    {
+        bool localPlayerInLobby = false;
+
+        foreach (LobbyPlayer player in players)
+        {
+            if(player.player_id == LocalPlayerID)
             {
-                LobbyGameRequestResult.Data data = result.GetData();
-                KeyText.text = data.room_key;
+                localPlayerInLobby = true;
+            }
+        }
 
-                foreach (LobbyGameRequestResult.Player player in data.players)
+        if (localPlayerInLobby)
+        {
+            // Remove any lost players
+            int numChildren = RoomListPanel.transform.childCount;
+            for (int i = numChildren - 1; i >= 0; --i)
+            {
+                GameObject obj = RoomListPanel.transform.GetChild(i).gameObject;
+                LobbyOccupant occupant = obj.GetComponent<LobbyOccupant>();
+                string playerID = occupant.GetPlayerID();
+                bool playerIsInList = false;
+                foreach (LobbyPlayer player in players)
                 {
-                    
-                    GameObject Item = GameObject.Instantiate(TextItemPrefab);
-
-                    Item.GetComponent<Text>().text = player.player_id;
-                    Item.transform.SetParent(RoomListPanel.transform);
-
+                    if (player.player_id == playerID)
+                    {
+                        playerIsInList = true;
+                    }
                 }
 
-                ScreenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
-                ScreenMgr.TransitionScreenOn(ScreenManager.ScreenID.Lobby);
+                if (playerIsInList == false)
+                {
+                    GameObject.Destroy(obj);
+                }
+            }
 
+            numChildren = RoomListPanel.transform.childCount;
+            // Add any new players
+            foreach (LobbyPlayer player in players)
+            {
+                bool playerAlreadyExists = false;
+                for (int i = 0; i < numChildren && !playerAlreadyExists; ++i)
+                {
+                    GameObject obj = RoomListPanel.transform.GetChild(i).gameObject;
+                    LobbyOccupant occupant = obj.GetComponent<LobbyOccupant>();
+                    if(occupant.GetPlayerID() == player.player_id)
+                    {
+                        playerAlreadyExists = true;
+                    }
+                }
+
+                if(playerAlreadyExists == false)
+                {
+                    AddPlayerToLobby(player);
+                }
             }
         }
         else
         {
-
+            // We have been removed from the lobby
         }
+
+
+
     }
 }

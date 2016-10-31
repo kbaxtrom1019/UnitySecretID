@@ -85,49 +85,49 @@ public class ScreenManager : MonoBehaviour
 
     public CreateGameScreen GetCreateGameScreen()
     {
-        GameObject Obj = GetScreenObj(ScreenID.CreateGame);
-        if (Obj != null)
+        GameObject obj = GetScreenObj(ScreenID.CreateGame);
+        if (obj != null)
         {
-            return Obj.GetComponent<CreateGameScreen>();
+            return obj.GetComponent<CreateGameScreen>();
         }
         return null;
     }
 
     public JoinGameScreen GetJoinGameScreen()
     {
-        GameObject Obj = GetScreenObj(ScreenID.JoinGame);
-        if (Obj != null)
+        GameObject obj = GetScreenObj(ScreenID.JoinGame);
+        if (obj != null)
         {
-            return Obj.GetComponent<JoinGameScreen>();
+            return obj.GetComponent<JoinGameScreen>();
         }
         return null;
     }
 
     public OKPopupScreen GetOKPopupScreen()
     {
-        GameObject Obj = GetScreenObj(ScreenID.CreateGame);
-        if (Obj != null)
+        GameObject obj = GetScreenObj(ScreenID.CreateGame);
+        if (obj != null)
         {
-            return Obj.GetComponent<OKPopupScreen>();
+            return obj.GetComponent<OKPopupScreen>();
         }
         return null;
     }
 
-    public void TransitionScreenOn(ScreenID ID)
+    public void TransitionScreenOn(ScreenID id)
     {
-        GameObject Obj = GetScreenObj(ID);
-        if(Obj != null)
+        GameObject obj = GetScreenObj(id);
+        if(obj != null)
         {
-            TransitionScreenOn(Obj.GetComponent<Animator>());
+            TransitionScreenOn(obj.GetComponent<Animator>());
         }
     }
 
-    public void TransitionScreenOff(ScreenID ID)
+    public void TransitionScreenOff(ScreenID id)
     {
-        GameObject Obj = GetScreenObj(ID);
-        if (Obj != null)
+        GameObject obj = GetScreenObj(id);
+        if (obj != null)
         {
-            TransitionScreenOff(Obj.GetComponent<Animator>());
+            TransitionScreenOff(obj.GetComponent<Animator>());
         }
     }
 
