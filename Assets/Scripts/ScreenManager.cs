@@ -10,7 +10,8 @@ public class ScreenManager : MonoBehaviour
        JoinGame,
        Lobby,
        OKPopup,
-       Spinner 
+       Spinner,
+       Game,
     };
 
 
@@ -20,6 +21,7 @@ public class ScreenManager : MonoBehaviour
     public GameObject LobbyScreen;
     public GameObject OKPopupScreen;
     public GameObject SpinnerScreen;
+    public GameObject GameScreen;
 
 
     private static ScreenManager instance;
@@ -41,6 +43,7 @@ public class ScreenManager : MonoBehaviour
         LobbyScreen.SetActive(true);
         OKPopupScreen.SetActive(true);
         SpinnerScreen.SetActive(true);
+        GameScreen.SetActive(true);
     }
 
     public static ScreenManager GetInstance()
@@ -79,6 +82,9 @@ public class ScreenManager : MonoBehaviour
 
             case ScreenID.Spinner:
                 return SpinnerScreen;
+
+            case ScreenID.Game:
+                return GameScreen;
         }
         return null;
     }
@@ -133,17 +139,29 @@ public class ScreenManager : MonoBehaviour
 
     public void ShowOKPopup(string Msg)
     {
-        GameObject Popup = GetScreenObj(ScreenID.OKPopup);
-        OKPopupScreen OKPopup = Popup.GetComponent<OKPopupScreen>();
-        OKPopup.SetMessageText("Please enter a name first");
+        GameObject popup = GetScreenObj(ScreenID.OKPopup);
+        OKPopupScreen okPopup = popup.GetComponent<OKPopupScreen>();
+        okPopup.SetMessageText(Msg);
         TransitionScreenOn(ScreenID.OKPopup);
     }
 
     public void ShowSpinner(string Msg)
     {
-        GameObject SpinnerObj = GetScreenObj(ScreenID.Spinner);
-        SpinnerScreen Spinner = SpinnerObj.GetComponent<SpinnerScreen>();
-        Spinner.SetMessageText("Connecting");
+        GameObject spinnerObj = GetScreenObj(ScreenID.Spinner);
+        SpinnerScreen spinner = spinnerObj.GetComponent<SpinnerScreen>();
+        spinner.SetMessageText(Msg);
         TransitionScreenOn(ScreenID.Spinner);
+    }
+
+    public bool IsShowing(ScreenID id)
+    {
+        bool retVal = false;
+        GameObject obj = GetScreenObj(id);
+        if (obj != null)
+        {
+            Animator anim = obj.GetComponent<Animator>();
+            retVal = anim.GetBool("IsDisplayed");
+        }
+        return retVal;
     }
 }

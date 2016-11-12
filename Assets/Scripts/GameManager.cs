@@ -10,6 +10,8 @@ public class GameManager : MonoBehaviour
         None,
         Lobby,
         RefreshingLobby,
+        Game,
+        RefreshingGame,
     };
 
     public Text KeyText;
@@ -131,6 +133,17 @@ public class GameManager : MonoBehaviour
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         onlineServices.LeaveLobby(null);
+        CurrentState = GameState.None;
+    }
+
+    public void LobbyMenu_OnClickedStart()
+    {
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Lobby);
+        screenMgr.ShowSpinner("Starting Game...");
+        OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
+        onlineServices.StartGame(OnStartGameCompleted);
+
     }
 
     public void JoinMenu_OnClickedBack()
@@ -172,7 +185,10 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Create Game Error");
+            ScreenManager screenMgr = ScreenManager.GetInstance();
+            screenMgr.ShowOKPopup("An error occured while creating a game.  Please try again");
+            screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
+            screenMgr.TransitionScreenOn(ScreenManager.ScreenID.CreateGame);
         }
     }
 
@@ -185,7 +201,23 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Join Game Error");
+            ScreenManager screenMgr = ScreenManager.GetInstance();
+            screenMgr.ShowOKPopup("An error occured while creating joining the game.  Please try again");
+            screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
+            screenMgr.TransitionScreenOn(ScreenManager.ScreenID.JoinGame);
+        }
+    }
+
+    void OnStartGameCompleted(StartGameRequestResult result)
+    {
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        if (result.GetRequestResult() == StartGameRequestResult.RequestResult.Success)
+        {
+            
+        }
+        else
+        {
+            screenMgr.ShowOKPopup("Error starting game");
         }
     }
 
@@ -194,7 +226,22 @@ public class GameManager : MonoBehaviour
         if (result.GetRequestResult() == RefreshLobbyRequestResult.RequestResult.Success)
         {
             RefreshLobbyRequestResult.Data data = result.GetData();
-            UpdateLobby(data.players);
+            if(data.game_started)
+            {
+                CurrentState = GameState.Game;
+                ScreenManager screenMgr = ScreenManager.GetInstance();
+                screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Lobby);
+                if(screenMgr.IsShowing(ScreenManager.ScreenID.Spinner))
+                {
+                    screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
+                }
+                screenMgr.TransitionScreenOn(ScreenManager.ScreenID.Game);
+            }
+            else
+            {
+                UpdateLobby(data.players);
+            }
+            
         }
         else
         {

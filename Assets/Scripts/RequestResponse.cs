@@ -240,6 +240,8 @@ public class RefreshLobbyRequestResult
     public class Data
     {
         public string error;
+        public bool game_started;
+        public int seed_value;
         public List<LobbyPlayer> players = new List<LobbyPlayer>();
     };
 
@@ -248,6 +250,67 @@ public class RefreshLobbyRequestResult
     private Data data;
 
     public RefreshLobbyRequestResult(GameSparks.Api.Responses.LogEventResponse requestResponse)
+    {
+        if (requestResponse.HasErrors)
+        {
+            result = RequestResult.Failure;
+        }
+        else
+        {
+            result = RequestResult.Success;
+        }
+
+        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
+        data = JsonUtility.FromJson<Data>(resultData.JSON);
+        List<GSData> playerList = resultData.GetGSDataList("players");
+        if (playerList != null)
+        {
+            data.players = new List<LobbyPlayer>();
+            foreach (GSData playerData in playerList)
+            {
+                LobbyPlayer player = JsonUtility.FromJson<LobbyPlayer>(playerData.JSON);
+                data.players.Add(player);
+            }
+        }
+
+        if (data.error != null && data.error.Length > 0)
+        {
+            result = RequestResult.Failure;
+        }
+
+        response = requestResponse;
+    }
+
+    public RequestResult GetRequestResult()
+    {
+        return result;
+    }
+
+    public Data GetData()
+    {
+        return data;
+    }
+};
+
+public class StartGameRequestResult
+{
+    public enum RequestResult
+    {
+        Success,
+        Failure
+    };
+
+    public class Data
+    {
+        public string error;
+        public List<LobbyPlayer> players = new List<LobbyPlayer>();
+    };
+
+    public RequestResult result;
+    private GameSparks.Api.Responses.LogEventResponse response;
+    private Data data;
+
+    public StartGameRequestResult(GameSparks.Api.Responses.LogEventResponse requestResponse)
     {
         if (requestResponse.HasErrors)
         {

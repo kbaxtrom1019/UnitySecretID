@@ -13,6 +13,7 @@ public class OnlineServicesManger : MonoBehaviour
     public delegate void OnJoinLobbyComplete(JoinLobbyRequestResult result);
     public delegate void OnLeaveLobbyComplete(LeaveLobbyRequestResult result);
     public delegate void OnRefreshLobbyComplete(RefreshLobbyRequestResult result);
+    public delegate void OnStartGameComplete(StartGameRequestResult result);
 
 
     private static OnlineServicesManger instance;
@@ -151,6 +152,25 @@ public class OnlineServicesManger : MonoBehaviour
             if (callback != null)
             {
                 RefreshLobbyRequestResult result = new RefreshLobbyRequestResult(response);
+                callback(result);
+            }
+        });
+    }
+
+    public void StartGame(OnStartGameComplete callback)
+    {
+        int seedValue = Random.Range(0, 10000000);
+        GSRequestData data = new GSRequestData();
+        data.AddNumber("seed_value", seedValue);
+
+        new LogEventRequest()
+        .SetEventKey("START_GAME")
+        .SetEventAttribute("sg_data", data)
+        .Send((response) => {
+
+            if (callback != null)
+            {
+                StartGameRequestResult result = new StartGameRequestResult(response);
                 callback(result);
             }
         });
