@@ -109,6 +109,16 @@ public class ScreenManager : MonoBehaviour
         return null;
     }
 
+    public GameScreen GetGameScreen()
+    {
+        GameObject obj = GetScreenObj(ScreenID.Game);
+        if (obj != null)
+        {
+            return obj.GetComponent<GameScreen>();
+        }
+        return null;
+    }
+
     public OKPopupScreen GetOKPopupScreen()
     {
         GameObject obj = GetScreenObj(ScreenID.CreateGame);

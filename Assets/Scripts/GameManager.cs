@@ -22,11 +22,15 @@ public class GameManager : MonoBehaviour
     private float RefreshTimer;
     private const float RefreshTime = 2.0f;
     private string LocalPlayerID = null;
+    private List<Sprite> IconResources;
+    private Dictionary<string, List<int>> playerIcons = new Dictionary<string, List<int>>();
+    private const int MaxNumIcons = 9;
 
     public void Start()
     {
         ScreenManager screenMgr = ScreenManager.GetInstance();
         screenMgr.ShowSpinner("Connecting...");
+        IconResources = new List<Sprite>(Resources.LoadAll<Sprite>("GameIcons"));
     }
 
     public void Update()
@@ -47,7 +51,6 @@ public class GameManager : MonoBehaviour
                 onlineServices.RefreshLobby(OnRefreshLobbyComplete);
             }
         }
-
     }
 
     public void MainMenu_OnCreateGameButtonClicked()
@@ -217,7 +220,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            screenMgr.ShowOKPopup("Error starting game");
+            screenMgr.ShowOKPopup("Error starting game.  Please try again");
         }
     }
 
@@ -226,20 +229,23 @@ public class GameManager : MonoBehaviour
         if (result.GetRequestResult() == RefreshLobbyRequestResult.RequestResult.Success)
         {
             RefreshLobbyRequestResult.Data data = result.GetData();
-            if(data.game_started)
+            if(data.game_started && CurrentState == GameState.RefreshingLobby)
             {
                 CurrentState = GameState.Game;
+
                 ScreenManager screenMgr = ScreenManager.GetInstance();
                 screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Lobby);
                 if(screenMgr.IsShowing(ScreenManager.ScreenID.Spinner))
                 {
                     screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
                 }
+                SetupGame(data.seed_value, data.players);
                 screenMgr.TransitionScreenOn(ScreenManager.ScreenID.Game);
             }
             else
             {
                 UpdateLobby(data.players);
+                CurrentState = GameState.Lobby;
             }
             
         }
@@ -247,8 +253,86 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogError("Refresh Game Error");
         }
-        CurrentState = GameState.Lobby;
         ResetRefreshTimer();
+    }
+
+    void SetupGame(int seedValue, List<LobbyPlayer> players)
+    {
+        Random.InitState(seedValue);
+        players.Sort();
+
+
+        int numIconsNeeded = players.Count * MaxNumIcons;
+        int totalNumIcons = IconResources.Count;
+        List<int> AllIconIndicies = new List<int>();
+        for(int i = 0; i < totalNumIcons; ++i)
+        {
+            AllIconIndicies.Add(i);
+        }
+
+        playerIcons.Clear();
+        foreach (LobbyPlayer player in players)
+        {
+            List<int> tempPlayerIcons = new List<int>();
+            for(int j = 0; j < MaxNumIcons; ++j)
+            {
+                int randIndex = Random.Range(0, AllIconIndicies.Count - 1);
+                int index = AllIconIndicies[randIndex];
+                AllIconIndicies.RemoveAt(randIndex);
+                tempPlayerIcons.Add(index);
+            }
+
+            playerIcons.Add(player.player_id, tempPlayerIcons);
+            string playerDataStr = string.Format("Player:{0} ID:{1}", player.player_name, player.player_id);
+            Debug.Log(playerDataStr);
+            if (player.player_id == LocalPlayerID)
+            {
+                ScreenManager screenMgr = ScreenManager.GetInstance();
+                GameScreen gameScreen = screenMgr.GetGameScreen();
+                string iconList = "Icons:";
+                for (int j = 0; j < MaxNumIcons; ++j)
+                {
+                    Sprite img = IconResources[tempPlayerIcons[j]];
+                    gameScreen.SetKeypadIcon(j, img);
+                    iconList += string.Format("{0} ", img.name);
+
+                }
+                Debug.Log(iconList);
+            }
+            
+        }
+
+
+        PickMyIcon();
+    }
+
+    public void GameMenu_OnIconButtonPressed(int buttonIndex)
+    {
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        GameScreen gameScreen = screenMgr.GetGameScreen();
+        string iconName = gameScreen.GetKeypadIconName(buttonIndex);
+
+        List<int> buttonMapping = playerIcons[LocalPlayerID];
+        int pressedIndex = buttonMapping[buttonIndex];
+
+        Sprite icon = IconResources[pressedIndex];
+        Debug.Assert(icon.name == iconName, "Icon name does not match:"+iconName);
+
+    }
+
+    void PickMyIcon()
+    {
+        List<string> playerKeys = new List<string>(playerIcons.Keys);
+        int randPlayerIndex = Random.Range(0, playerKeys.Count - 1);
+        List<int> tempPlayerIcons = playerIcons[playerKeys[randPlayerIndex]];
+        int randomIndex = Random.Range(0, tempPlayerIcons.Count - 1);
+        Sprite img = IconResources[tempPlayerIcons[randomIndex]];
+
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        GameScreen gameScreen = screenMgr.GetGameScreen();
+        gameScreen.SetMyIcon(img);
+
+
     }
 
     void ResetRefreshTimer()
@@ -346,8 +430,5 @@ public class GameManager : MonoBehaviour
         {
             // We have been removed from the lobby
         }
-
-
-
     }
 }
