@@ -14,7 +14,7 @@ public class OnlineServicesManger : MonoBehaviour
     public delegate void OnLeaveLobbyComplete(LeaveLobbyRequestResult result);
     public delegate void OnRefreshLobbyComplete(RefreshLobbyRequestResult result);
     public delegate void OnStartGameComplete(StartGameRequestResult result);
-
+    public delegate void OnSetPlayerIconComplete(SetPlayerIconRequestResult result);
 
     private static OnlineServicesManger instance;
     public void Awake()
@@ -174,6 +174,16 @@ public class OnlineServicesManger : MonoBehaviour
                 callback(result);
             }
         });
+    }
+
+    public void SetPlayerIcon(int iconIndex, OnSetPlayerIconComplete callback)
+    {
+
+    }
+
+    public void IconButtonPressed(int iconIndex)
+    {
+
     }
 
     void OnGUI()

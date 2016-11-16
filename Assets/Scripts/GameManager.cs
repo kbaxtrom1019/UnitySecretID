@@ -224,38 +224,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void OnRefreshLobbyComplete(RefreshLobbyRequestResult result)
-    {
-        if (result.GetRequestResult() == RefreshLobbyRequestResult.RequestResult.Success)
-        {
-            RefreshLobbyRequestResult.Data data = result.GetData();
-            if(data.game_started && CurrentState == GameState.RefreshingLobby)
-            {
-                CurrentState = GameState.Game;
-
-                ScreenManager screenMgr = ScreenManager.GetInstance();
-                screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Lobby);
-                if(screenMgr.IsShowing(ScreenManager.ScreenID.Spinner))
-                {
-                    screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
-                }
-                SetupGame(data.seed_value, data.players);
-                screenMgr.TransitionScreenOn(ScreenManager.ScreenID.Game);
-            }
-            else
-            {
-                UpdateLobby(data.players);
-                CurrentState = GameState.Lobby;
-            }
-            
-        }
-        else
-        {
-            Debug.LogError("Refresh Game Error");
-        }
-        ResetRefreshTimer();
-    }
-
     void SetupGame(int seedValue, List<LobbyPlayer> players)
     {
         Random.InitState(seedValue);
@@ -326,13 +294,27 @@ public class GameManager : MonoBehaviour
         int randPlayerIndex = Random.Range(0, playerKeys.Count - 1);
         List<int> tempPlayerIcons = playerIcons[playerKeys[randPlayerIndex]];
         int randomIndex = Random.Range(0, tempPlayerIcons.Count - 1);
-        Sprite img = IconResources[tempPlayerIcons[randomIndex]];
+        int iconIndex = tempPlayerIcons[randomIndex];
+        Sprite img = IconResources[iconIndex];
 
         ScreenManager screenMgr = ScreenManager.GetInstance();
         GameScreen gameScreen = screenMgr.GetGameScreen();
         gameScreen.SetMyIcon(img);
 
+        OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
+        onlineServices.SetPlayerIcon(iconIndex, OnSetPlayerIconComplete);
+    }
 
+    void OnSetPlayerIconComplete(SetPlayerIconRequestResult result)
+    {
+        if(result.GetRequestResult() == SetPlayerIconRequestResult.RequestResult.Success)
+        {
+
+        }
+        else
+        {
+            Debug.LogError("Set player icon failed");
+        }
     }
 
     void ResetRefreshTimer()
@@ -366,6 +348,38 @@ public class GameManager : MonoBehaviour
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.Lobby);
         CurrentState = GameState.Lobby;
+        ResetRefreshTimer();
+    }
+
+    void OnRefreshLobbyComplete(RefreshLobbyRequestResult result)
+    {
+        if (result.GetRequestResult() == RefreshLobbyRequestResult.RequestResult.Success)
+        {
+            RefreshLobbyRequestResult.Data data = result.GetData();
+            if (data.game_started && CurrentState == GameState.RefreshingLobby)
+            {
+                CurrentState = GameState.Game;
+
+                ScreenManager screenMgr = ScreenManager.GetInstance();
+                screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Lobby);
+                if (screenMgr.IsShowing(ScreenManager.ScreenID.Spinner))
+                {
+                    screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
+                }
+                SetupGame(data.seed_value, data.players);
+                screenMgr.TransitionScreenOn(ScreenManager.ScreenID.Game);
+            }
+            else
+            {
+                UpdateLobby(data.players);
+                CurrentState = GameState.Lobby;
+            }
+
+        }
+        else
+        {
+            Debug.LogError("Refresh Game Error");
+        }
         ResetRefreshTimer();
     }
 

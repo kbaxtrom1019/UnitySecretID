@@ -5,49 +5,14 @@ using GameSparks.Api;
 using GameSparks.Core;
 using GameSparks.Api.Requests;
 
-public class AuthenticationRequestResult
-{
-    public enum RequestResult
-    {
-        Success,
-        Failure
-    };
-
-    public RequestResult result;
-    private GameSparks.Api.Responses.AuthenticationResponse response;
-
-    public AuthenticationRequestResult(GameSparks.Api.Responses.AuthenticationResponse requestResponse)
-    {
-        if (requestResponse.HasErrors)
-        {
-            result = RequestResult.Failure;
-        }
-        else
-        {
-            result = RequestResult.Success;
-        }
-
-        response = requestResponse;
-    }
-
-    public RequestResult GetRequestResult()
-    {
-        return result;
-    }
-
-    public string GetPlayerID()
-    {
-        return response.UserId;
-    }
-};
-
 public class LobbyPlayer
 {
     public string player_id;
     public string player_name;
 };
 
-public class CreateLobbyRequestResult
+
+public abstract class BaseRequestResult
 {
     public enum RequestResult
     {
@@ -55,6 +20,70 @@ public class CreateLobbyRequestResult
         Failure
     };
 
+    protected RequestResult result;
+
+    public List<LobbyPlayer> GetPlayers(GSData resultData)
+    {
+        List<LobbyPlayer> players = new List<LobbyPlayer>();
+        List<GSData> playerList = resultData.GetGSDataList("players");
+        if (playerList != null)
+        {
+            foreach (GSData playerData in playerList)
+            {
+                LobbyPlayer player = JsonUtility.FromJson<LobbyPlayer>(playerData.JSON);
+                players.Add(player);
+            }
+        }
+
+        return players;
+    }
+
+    protected void Init(GSTypedResponse requestResponse)
+    {
+        if (requestResponse.HasErrors)
+        {
+            result = RequestResult.Failure;
+        }
+        else
+        {
+            result = RequestResult.Success;
+        }
+
+        ProcessResponse(requestResponse);
+    }
+
+    public RequestResult GetRequestResult()
+    {
+        return result;
+    }
+
+    protected virtual void ProcessResponse(GSTypedResponse requestResponse) { }
+};
+
+
+public class AuthenticationRequestResult : BaseRequestResult
+{
+    private GameSparks.Api.Responses.AuthenticationResponse response;
+
+    public AuthenticationRequestResult(GameSparks.Api.Responses.AuthenticationResponse requestResponse)
+    {
+        Init(requestResponse);
+        response = requestResponse;
+    }
+
+    public string GetPlayerID()
+    {
+        return response.UserId;
+    }
+
+    protected override void ProcessResponse(GSTypedResponse requestResponse)
+    {
+        base.ProcessResponse(requestResponse);
+    }
+};
+
+public class CreateLobbyRequestResult : BaseRequestResult
+{
     public class Data
     {
         public string room_key;
@@ -62,45 +91,25 @@ public class CreateLobbyRequestResult
         public List<LobbyPlayer> players = new List<LobbyPlayer>();
     };
 
-    public RequestResult result;
     private GameSparks.Api.Responses.LogEventResponse response;
     private Data data;
 
     public CreateLobbyRequestResult(GameSparks.Api.Responses.LogEventResponse requestResponse)
     {
-        if (requestResponse.HasErrors)
-        {
-            result = RequestResult.Failure;
-        }
-        else
-        {
-            result = RequestResult.Success;
-        }
-
-        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
-        data = JsonUtility.FromJson<Data>(resultData.JSON);
-        List<GSData> playerList = resultData.GetGSDataList("players");
-        if (playerList != null)
-        {
-            data.players = new List<LobbyPlayer>();
-            foreach (GSData playerData in playerList)
-            {
-                LobbyPlayer player = JsonUtility.FromJson<LobbyPlayer>(playerData.JSON);
-                data.players.Add(player);
-            }
-        }
-
-        if (data.error != null)
-        {
-            result = RequestResult.Failure;
-        }
-
+        Init(requestResponse);
         response = requestResponse;
     }
 
-    public RequestResult GetRequestResult()
+    protected override void ProcessResponse(GSTypedResponse requestResponse)
     {
-        return result;
+        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
+        data = JsonUtility.FromJson<Data>(resultData.JSON);
+        data.players = GetPlayers(resultData);
+
+        if (data.error != null && data.error.Length > 0)
+        {
+            result = RequestResult.Failure;
+        }
     }
 
     public Data GetData()
@@ -109,14 +118,8 @@ public class CreateLobbyRequestResult
     }
 };
 
-public class JoinLobbyRequestResult
+public class JoinLobbyRequestResult : BaseRequestResult
 {
-    public enum RequestResult
-    {
-        Success,
-        Failure
-    };
-
     public class Data
     {
         public string room_key;
@@ -124,45 +127,27 @@ public class JoinLobbyRequestResult
         public List<LobbyPlayer> players = new List<LobbyPlayer>();
     };
 
-    public RequestResult result;
     private GameSparks.Api.Responses.LogEventResponse response;
     private Data data;
 
     public JoinLobbyRequestResult(GameSparks.Api.Responses.LogEventResponse requestResponse)
     {
-        if (requestResponse.HasErrors)
-        {
-            result = RequestResult.Failure;
-        }
-        else
-        {
-            result = RequestResult.Success;
-        }
-
-        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
-        data = JsonUtility.FromJson<Data>(resultData.JSON);
-        List<GSData> playerList = resultData.GetGSDataList("players");
-        if (playerList != null)
-        {
-            data.players = new List<LobbyPlayer>();
-            foreach (GSData playerData in playerList)
-            {
-                LobbyPlayer player = JsonUtility.FromJson<LobbyPlayer>(playerData.JSON);
-                data.players.Add(player);
-            }
-        }
-
-        if(data.error != null)
-        {
-            result = RequestResult.Failure;
-        }
-
+        Init(requestResponse);
         response = requestResponse;
     }
 
-    public RequestResult GetRequestResult()
+    protected override void ProcessResponse(GSTypedResponse requestResponse)
     {
-        return result;
+        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
+        data = JsonUtility.FromJson<Data>(resultData.JSON);
+        data.players = GetPlayers(resultData);
+
+        if (data.error != null && data.error.Length > 0)
+        {
+            result = RequestResult.Failure;
+        }
+
+        base.ProcessResponse(requestResponse);
     }
 
     public Data GetData()
@@ -171,40 +156,29 @@ public class JoinLobbyRequestResult
     }
 };
 
-public class LeaveLobbyRequestResult
+public class LeaveLobbyRequestResult : BaseRequestResult
 {
-    public enum RequestResult
-    {
-        Success,
-        Failure
-    };
-
     public class Data
     {
         public string error;
     };
-
-    public RequestResult result;
     private GameSparks.Api.Responses.LogEventResponse response;
     private Data data;
 
     public LeaveLobbyRequestResult(GameSparks.Api.Responses.LogEventResponse requestResponse)
     {
-        if (requestResponse.HasErrors)
-        {
-            result = RequestResult.Failure;
-        }
-        else
-        {
-            result = RequestResult.Success;
-        }
+        Init(requestResponse);
+        response = requestResponse;
+    }
 
+    protected override void ProcessResponse(GSTypedResponse requestResponse)
+    {
         GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
         data = JsonUtility.FromJson<Data>(resultData.JSON);
 
-        if(data.error != null && data.error.Length > 0)
+        if (data.error != null && data.error.Length > 0)
         {
-            if(data.error == "PLAYER_NOT_IN_ROOM")
+            if (data.error == "PLAYER_NOT_IN_ROOM")
             {
                 result = RequestResult.Success;
             }
@@ -213,13 +187,7 @@ public class LeaveLobbyRequestResult
                 result = RequestResult.Failure;
             }
         }
-
-        response = requestResponse;
-    }
-
-    public RequestResult GetRequestResult()
-    {
-        return result;
+        base.ProcessResponse(requestResponse);
     }
 
     public Data GetData()
@@ -229,14 +197,8 @@ public class LeaveLobbyRequestResult
 };
 
 
-public class RefreshLobbyRequestResult
+public class RefreshLobbyRequestResult : BaseRequestResult
 {
-    public enum RequestResult
-    {
-        Success,
-        Failure
-    };
-
     public class Data
     {
         public string error;
@@ -245,45 +207,26 @@ public class RefreshLobbyRequestResult
         public List<LobbyPlayer> players = new List<LobbyPlayer>();
     };
 
-    public RequestResult result;
     private GameSparks.Api.Responses.LogEventResponse response;
     private Data data;
 
     public RefreshLobbyRequestResult(GameSparks.Api.Responses.LogEventResponse requestResponse)
     {
-        if (requestResponse.HasErrors)
-        {
-            result = RequestResult.Failure;
-        }
-        else
-        {
-            result = RequestResult.Success;
-        }
+        Init(requestResponse);
+        response = requestResponse;
+    }
 
+    protected override void ProcessResponse(GSTypedResponse requestResponse)
+    {
         GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
         data = JsonUtility.FromJson<Data>(resultData.JSON);
-        List<GSData> playerList = resultData.GetGSDataList("players");
-        if (playerList != null)
-        {
-            data.players = new List<LobbyPlayer>();
-            foreach (GSData playerData in playerList)
-            {
-                LobbyPlayer player = JsonUtility.FromJson<LobbyPlayer>(playerData.JSON);
-                data.players.Add(player);
-            }
-        }
+        data.players = GetPlayers(resultData);
 
         if (data.error != null && data.error.Length > 0)
         {
             result = RequestResult.Failure;
         }
-
-        response = requestResponse;
-    }
-
-    public RequestResult GetRequestResult()
-    {
-        return result;
+        base.ProcessResponse(requestResponse);
     }
 
     public Data GetData()
@@ -292,13 +235,8 @@ public class RefreshLobbyRequestResult
     }
 };
 
-public class StartGameRequestResult
+public class StartGameRequestResult : BaseRequestResult
 {
-    public enum RequestResult
-    {
-        Success,
-        Failure
-    };
 
     public class Data
     {
@@ -306,45 +244,27 @@ public class StartGameRequestResult
         public List<LobbyPlayer> players = new List<LobbyPlayer>();
     };
 
-    public RequestResult result;
     private GameSparks.Api.Responses.LogEventResponse response;
     private Data data;
 
     public StartGameRequestResult(GameSparks.Api.Responses.LogEventResponse requestResponse)
     {
-        if (requestResponse.HasErrors)
-        {
-            result = RequestResult.Failure;
-        }
-        else
-        {
-            result = RequestResult.Success;
-        }
+        Init(requestResponse);
+        response = requestResponse;
+    }
 
+    protected override void ProcessResponse(GSTypedResponse requestResponse)
+    {
         GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
         data = JsonUtility.FromJson<Data>(resultData.JSON);
-        List<GSData> playerList = resultData.GetGSDataList("players");
-        if (playerList != null)
-        {
-            data.players = new List<LobbyPlayer>();
-            foreach (GSData playerData in playerList)
-            {
-                LobbyPlayer player = JsonUtility.FromJson<LobbyPlayer>(playerData.JSON);
-                data.players.Add(player);
-            }
-        }
+        data.players = GetPlayers(resultData);
 
         if (data.error != null && data.error.Length > 0)
         {
             result = RequestResult.Failure;
         }
 
-        response = requestResponse;
-    }
-
-    public RequestResult GetRequestResult()
-    {
-        return result;
+        base.ProcessResponse(requestResponse);
     }
 
     public Data GetData()
@@ -352,3 +272,40 @@ public class StartGameRequestResult
         return data;
     }
 };
+
+public class SetPlayerIconRequestResult : BaseRequestResult
+{
+    public class Data
+    {
+        public string error;
+        public List<LobbyPlayer> players = new List<LobbyPlayer>();
+    };
+
+    private GameSparks.Api.Responses.LogEventResponse response;
+    private Data data;
+
+    public SetPlayerIconRequestResult(GameSparks.Api.Responses.LogEventResponse requestResponse)
+    {
+        Init(requestResponse);
+        response = requestResponse;
+    }
+
+    protected override void ProcessResponse(GSTypedResponse requestResponse)
+    {
+        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
+        data = JsonUtility.FromJson<Data>(resultData.JSON);
+        data.players = GetPlayers(resultData);
+
+        if (data.error != null && data.error.Length > 0)
+        {
+            result = RequestResult.Failure;
+        }
+        base.ProcessResponse(requestResponse);
+    }
+
+    public Data GetData()
+    {
+        return data;
+    }
+};
+
