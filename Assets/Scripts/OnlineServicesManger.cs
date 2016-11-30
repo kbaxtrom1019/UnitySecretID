@@ -13,8 +13,10 @@ public class OnlineServicesManger : MonoBehaviour
     public delegate void OnJoinLobbyComplete(JoinLobbyRequestResult result);
     public delegate void OnLeaveLobbyComplete(LeaveLobbyRequestResult result);
     public delegate void OnRefreshLobbyComplete(RefreshLobbyRequestResult result);
+    public delegate void OnRefreshGameComplete(RefreshGameRequestResult result);
     public delegate void OnStartGameComplete(StartGameRequestResult result);
     public delegate void OnSetPlayerIconComplete(SetPlayerIconRequestResult result);
+    public delegate void OnIconPressedComplete(IconPressedRequestResult result);
 
     private static OnlineServicesManger instance;
     public void Awake()
@@ -53,6 +55,12 @@ public class OnlineServicesManger : MonoBehaviour
         return GS.Authenticated;
     }
 
+    private string roomKey;
+    public void SetRoomKey(string value)
+    {
+        roomKey = value;
+    }
+
     public void Authenticate(OnAuthenticationComplete callback)
     {
         new DeviceAuthenticationRequest()
@@ -69,12 +77,12 @@ public class OnlineServicesManger : MonoBehaviour
         });
     }
 
-    public void CreateLobby(OnCreateLobbyComplete callback, string playerName)
+    public void CreateLobby(string playerName, OnCreateLobbyComplete callback)
     {
         GSRequestData leavedata = new GSRequestData();
         new LogEventRequest()
         .SetEventKey("LEAVE_GAME")
-        .SetEventAttribute("lg_data", leavedata)
+        .SetEventAttribute("leave_data", leavedata)
         .Send((leaveResponse) => {
 
             LeaveLobbyRequestResult leaveResult = new LeaveLobbyRequestResult(leaveResponse);
@@ -83,8 +91,8 @@ public class OnlineServicesManger : MonoBehaviour
                 GSRequestData data = new GSRequestData();
                 data.AddString("player_name", playerName);
                 new LogEventRequest()
-                .SetEventKey("CREATE_GAME")
-                .SetEventAttribute("cg_data", data)
+                .SetEventKey("CREATE_LOBBY")
+                .SetEventAttribute("create_data", data)
                 .Send((createResponse) => {
 
                     if (callback != null)
@@ -107,14 +115,14 @@ public class OnlineServicesManger : MonoBehaviour
 
     }
 
-    public void JoinLobby(OnJoinLobbyComplete callback, string playerName, string roomKey)
+    public void JoinLobby(string playerName, string roomKey, OnJoinLobbyComplete callback)
     {
         GSRequestData data = new GSRequestData();
         data.AddString("player_name", playerName);
         data.AddString("room_key", roomKey);
         new LogEventRequest()
-        .SetEventKey("JOIN_GAME")
-        .SetEventAttribute("jg_data", data)
+        .SetEventKey("JOIN_LOBBY")
+        .SetEventAttribute("join_data", data)
         .Send((response) => {
 
             if (callback != null)
@@ -130,7 +138,7 @@ public class OnlineServicesManger : MonoBehaviour
         GSRequestData data = new GSRequestData();
         new LogEventRequest()
         .SetEventKey("LEAVE_GAME")
-        .SetEventAttribute("lg_data", data)
+        .SetEventAttribute("leave_data", data)
         .Send((response) => {
 
             if (callback != null)
@@ -144,9 +152,10 @@ public class OnlineServicesManger : MonoBehaviour
     public void RefreshLobby(OnRefreshLobbyComplete callback)
     {
         GSRequestData data = new GSRequestData();
+        data.AddString("room_key", roomKey);
         new LogEventRequest()
-        .SetEventKey("REFRESH_GAME")
-        .SetEventAttribute("rg_data", data)
+        .SetEventKey("REFRESH_LOBBY")
+        .SetEventAttribute("refresh_data", data)
         .Send((response) => {
 
             if (callback != null)
@@ -157,15 +166,34 @@ public class OnlineServicesManger : MonoBehaviour
         });
     }
 
-    public void StartGame(OnStartGameComplete callback)
+    public void RefreshGame(OnRefreshGameComplete callback)
+    {
+        GSRequestData data = new GSRequestData();
+        data.AddString("room_key", roomKey);
+        new LogEventRequest()
+        .SetEventKey("REFRESH_GAME")
+        .SetEventAttribute("refresh_data", data)
+        .Send((response) => {
+
+            if (callback != null)
+            {
+                RefreshGameRequestResult result = new RefreshGameRequestResult(response);
+                callback(result);
+            }
+        });
+    }
+
+    public void StartGame(int initialProgress, OnStartGameComplete callback)
     {
         int seedValue = Random.Range(0, 10000000);
         GSRequestData data = new GSRequestData();
         data.AddNumber("seed_value", seedValue);
+        data.AddString("room_key", roomKey);
+        data.AddNumber("initial_progress", initialProgress);
 
         new LogEventRequest()
         .SetEventKey("START_GAME")
-        .SetEventAttribute("sg_data", data)
+        .SetEventAttribute("start_data", data)
         .Send((response) => {
 
             if (callback != null)
@@ -178,12 +206,40 @@ public class OnlineServicesManger : MonoBehaviour
 
     public void SetPlayerIcon(int iconIndex, OnSetPlayerIconComplete callback)
     {
+        GSRequestData data = new GSRequestData();
+        data.AddNumber("icon_index", iconIndex);
+        data.AddString("room_key", roomKey);
+        new LogEventRequest()
+        .SetEventKey("SET_ICON")
+        .SetEventAttribute("icon_data", data)
+        .Send((response) => {
 
+            if (callback != null)
+            {
+                SetPlayerIconRequestResult result = new SetPlayerIconRequestResult(response);
+                callback(result);
+            }
+        });
     }
 
-    public void IconButtonPressed(int iconIndex)
+    public void IconButtonPressed(int iconIndex, int correctAward, int incorrectAward, OnIconPressedComplete callback)
     {
+        GSRequestData data = new GSRequestData();
+        data.AddNumber("icon_index", iconIndex);
+        data.AddString("room_key", roomKey);
+        data.AddNumber("correct_award", correctAward);
+        data.AddNumber("incorrect_award", incorrectAward);
+        new LogEventRequest()
+        .SetEventKey("ICON_PRESS")
+        .SetEventAttribute("icon_data", data)
+        .Send((response) => {
 
+            if (callback != null)
+            {
+                IconPressedRequestResult result = new IconPressedRequestResult(response);
+                callback(result);
+            }
+        });
     }
 
     void OnGUI()

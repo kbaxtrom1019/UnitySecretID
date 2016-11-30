@@ -25,6 +25,14 @@ public class GameManager : MonoBehaviour
     private List<Sprite> IconResources;
     private Dictionary<string, List<int>> playerIcons = new Dictionary<string, List<int>>();
     private const int MaxNumIcons = 9;
+    private int CorrectButtonAward = 100;
+    private int IncorrectButtonAward = -50;
+    private int MaxProgress = 1000;
+    private int InitialProgress = 500;
+    private int Progress;
+    private float ProgressLossAccumulator;
+    private float ProgressLossPerSecond = 16.0f;
+    private int ProgressLoss = 0;
 
     public void Start()
     {
@@ -42,14 +50,36 @@ public class GameManager : MonoBehaviour
             Initalized = true;
         }
 
-        if(CurrentState == GameState.Lobby)
+        if (CurrentState == GameState.Lobby)
         {
             RefreshTimer -= Time.deltaTime;
-            if(RefreshTimer <= 0.0f)
+            if (RefreshTimer <= 0.0f)
             {
                 CurrentState = GameState.RefreshingLobby;
                 onlineServices.RefreshLobby(OnRefreshLobbyComplete);
             }
+        }
+
+        if (CurrentState == GameState.Game)
+        {
+            RefreshTimer -= Time.deltaTime;
+            if (RefreshTimer <= 0.0f)
+            {
+                CurrentState = GameState.RefreshingGame;
+                onlineServices.RefreshGame(OnRefreshGameComplete);
+            }
+
+            ProgressLossAccumulator += (ProgressLossPerSecond * Time.deltaTime);
+            if(ProgressLossAccumulator >= 1.0f)
+            {
+                ProgressLoss -= 1;
+                ProgressLossAccumulator = 0;
+            }
+
+            float meterValue = ((float)ProgressLoss + (float)Progress) / (float)MaxProgress;
+            ScreenManager screenMgr = ScreenManager.GetInstance();
+            GameScreen gameScreen = screenMgr.GetGameScreen();
+            gameScreen.SetMeterProgress(meterValue);
         }
     }
 
@@ -88,7 +118,7 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                onlineServices.CreateLobby(OnCreateGameComplete, createScreen.GetInputText());
+                onlineServices.CreateLobby(createScreen.GetInputText(), OnCreateGameComplete);
                 screenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
                 screenMgr.ShowSpinner("Creating Game...");
             }
@@ -116,7 +146,7 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                onlineServices.JoinLobby(OnJoinGameComplete, joinScreen.GetNameText(), joinScreen.GetRoomKeyText());
+                onlineServices.JoinLobby(joinScreen.GetNameText(), joinScreen.GetRoomKeyText(), OnJoinGameComplete);
                 screenMgr.TransitionScreenOff(ScreenManager.ScreenID.JoinGame);
                 screenMgr.ShowSpinner("Joining Game...");
             }
@@ -145,8 +175,8 @@ public class GameManager : MonoBehaviour
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Lobby);
         screenMgr.ShowSpinner("Starting Game...");
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
-        onlineServices.StartGame(OnStartGameCompleted);
-
+        onlineServices.StartGame(InitialProgress, OnStartGameCompleted);
+        Progress = InitialProgress;
     }
 
     public void JoinMenu_OnClickedBack()
@@ -216,7 +246,7 @@ public class GameManager : MonoBehaviour
         ScreenManager screenMgr = ScreenManager.GetInstance();
         if (result.GetRequestResult() == StartGameRequestResult.RequestResult.Success)
         {
-            
+
         }
         else
         {
@@ -224,25 +254,26 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void SetupGame(int seedValue, List<LobbyPlayer> players)
+    void SetupGame(int seedValue, List<PlayerData> players)
     {
+        int restoreSeed = Random.Range(-5000000, 5000000);
+        Debug.Log("restoreSeed:" + restoreSeed);
         Random.InitState(seedValue);
         players.Sort();
 
-
-        int numIconsNeeded = players.Count * MaxNumIcons;
         int totalNumIcons = IconResources.Count;
         List<int> AllIconIndicies = new List<int>();
-        for(int i = 0; i < totalNumIcons; ++i)
+        for (int i = 0; i < totalNumIcons; ++i)
         {
             AllIconIndicies.Add(i);
         }
-
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        GameScreen gameScreen = screenMgr.GetGameScreen();
         playerIcons.Clear();
-        foreach (LobbyPlayer player in players)
+        foreach (PlayerData player in players)
         {
             List<int> tempPlayerIcons = new List<int>();
-            for(int j = 0; j < MaxNumIcons; ++j)
+            for (int j = 0; j < MaxNumIcons; ++j)
             {
                 int randIndex = Random.Range(0, AllIconIndicies.Count - 1);
                 int index = AllIconIndicies[randIndex];
@@ -255,8 +286,7 @@ public class GameManager : MonoBehaviour
             Debug.Log(playerDataStr);
             if (player.player_id == LocalPlayerID)
             {
-                ScreenManager screenMgr = ScreenManager.GetInstance();
-                GameScreen gameScreen = screenMgr.GetGameScreen();
+                
                 string iconList = "Icons:";
                 for (int j = 0; j < MaxNumIcons; ++j)
                 {
@@ -267,10 +297,14 @@ public class GameManager : MonoBehaviour
                 }
                 Debug.Log(iconList);
             }
-            
+
         }
 
+        float meterValue = (float)InitialProgress / (float)MaxProgress;
+        gameScreen.SetMeterProgress(meterValue);
 
+
+        Random.InitState(restoreSeed);
         PickMyIcon();
     }
 
@@ -284,13 +318,41 @@ public class GameManager : MonoBehaviour
         int pressedIndex = buttonMapping[buttonIndex];
 
         Sprite icon = IconResources[pressedIndex];
-        Debug.Assert(icon.name == iconName, "Icon name does not match:"+iconName);
+        Debug.Assert(icon.name == iconName, "Icon name does not match:" + iconName);
+
+        OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
+        onlineServices.IconButtonPressed(pressedIndex, CorrectButtonAward, IncorrectButtonAward, OnIconButtonPressedComplete);
+    }
+
+    void OnIconButtonPressedComplete(IconPressedRequestResult result)
+    {
+        if (result.GetRequestResult() == IconPressedRequestResult.RequestResult.Success)
+        {
+            IconPressedRequestResult.Data data = result.GetData();
+            if (data.press_match)
+            {
+
+            }
+            else
+            {
+
+            }
+        }
+        else
+        {
+            Debug.LogError("Set player icon failed");
+        }
 
     }
 
     void PickMyIcon()
     {
         List<string> playerKeys = new List<string>(playerIcons.Keys);
+        if (playerKeys.Count > 1)
+        {
+            playerKeys.Remove(LocalPlayerID);
+        }
+
         int randPlayerIndex = Random.Range(0, playerKeys.Count - 1);
         List<int> tempPlayerIcons = playerIcons[playerKeys[randPlayerIndex]];
         int randomIndex = Random.Range(0, tempPlayerIcons.Count - 1);
@@ -307,7 +369,7 @@ public class GameManager : MonoBehaviour
 
     void OnSetPlayerIconComplete(SetPlayerIconRequestResult result)
     {
-        if(result.GetRequestResult() == SetPlayerIconRequestResult.RequestResult.Success)
+        if (result.GetRequestResult() == SetPlayerIconRequestResult.RequestResult.Success)
         {
 
         }
@@ -322,7 +384,7 @@ public class GameManager : MonoBehaviour
         RefreshTimer = RefreshTime;
     }
 
-    void AddPlayerToLobby(LobbyPlayer player)
+    void AddPlayerToLobby(PlayerData player)
     {
         GameObject item = GameObject.Instantiate(TextItemPrefab);
         LobbyOccupant occupant = item.GetComponent<LobbyOccupant>();
@@ -330,21 +392,22 @@ public class GameManager : MonoBehaviour
         item.transform.SetParent(RoomListPanel.transform);
     }
 
-    void SetupLobby(string roomKey, List<LobbyPlayer> players)
+    void SetupLobby(string roomKey, List<PlayerData> players)
     {
         ScreenManager screenMgr = ScreenManager.GetInstance();
         KeyText.text = roomKey;
 
-        for(int i = 0; i < RoomListPanel.transform.childCount; ++i)
+        for (int i = 0; i < RoomListPanel.transform.childCount; ++i)
         {
             GameObject.Destroy(RoomListPanel.transform.GetChild(i).gameObject);
         }
 
-        foreach (LobbyPlayer player in players)
+        foreach (PlayerData player in players)
         {
             AddPlayerToLobby(player);
         }
-
+        OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
+        onlineServices.SetRoomKey(roomKey);
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.Lobby);
         CurrentState = GameState.Lobby;
@@ -383,13 +446,13 @@ public class GameManager : MonoBehaviour
         ResetRefreshTimer();
     }
 
-    void UpdateLobby(List<LobbyPlayer> players)
+    void UpdateLobby(List<PlayerData> players)
     {
         bool localPlayerInLobby = false;
 
-        foreach (LobbyPlayer player in players)
+        foreach (PlayerData player in players)
         {
-            if(player.player_id == LocalPlayerID)
+            if (player.player_id == LocalPlayerID)
             {
                 localPlayerInLobby = true;
             }
@@ -405,7 +468,7 @@ public class GameManager : MonoBehaviour
                 LobbyOccupant occupant = obj.GetComponent<LobbyOccupant>();
                 string playerID = occupant.GetPlayerID();
                 bool playerIsInList = false;
-                foreach (LobbyPlayer player in players)
+                foreach (PlayerData player in players)
                 {
                     if (player.player_id == playerID)
                     {
@@ -421,20 +484,20 @@ public class GameManager : MonoBehaviour
 
             numChildren = RoomListPanel.transform.childCount;
             // Add any new players
-            foreach (LobbyPlayer player in players)
+            foreach (PlayerData player in players)
             {
                 bool playerAlreadyExists = false;
                 for (int i = 0; i < numChildren && !playerAlreadyExists; ++i)
                 {
                     GameObject obj = RoomListPanel.transform.GetChild(i).gameObject;
                     LobbyOccupant occupant = obj.GetComponent<LobbyOccupant>();
-                    if(occupant.GetPlayerID() == player.player_id)
+                    if (occupant.GetPlayerID() == player.player_id)
                     {
                         playerAlreadyExists = true;
                     }
                 }
 
-                if(playerAlreadyExists == false)
+                if (playerAlreadyExists == false)
                 {
                     AddPlayerToLobby(player);
                 }
@@ -444,5 +507,36 @@ public class GameManager : MonoBehaviour
         {
             // We have been removed from the lobby
         }
+    }
+
+    void OnRefreshGameComplete(RefreshGameRequestResult result)
+    {
+
+        if (result.GetRequestResult() == RefreshGameRequestResult.RequestResult.Success)
+        {
+            RefreshGameRequestResult.Data data = result.GetData();
+            if(CurrentState == GameState.Game || CurrentState == GameState.RefreshingGame)
+            {
+                Progress = data.progress;
+                foreach (PlayerData player in data.players)
+                {
+                    if (player.player_id == LocalPlayerID)
+                    {
+                        if (player.player_icon == -2)
+                        {
+                            PickMyIcon();
+                        }
+                    }
+                }
+            }
+
+        }
+        else
+        {
+            Debug.LogError("Refresh Game Error");
+        }
+
+        CurrentState = GameState.Game;
+        ResetRefreshTimer();
     }
 }

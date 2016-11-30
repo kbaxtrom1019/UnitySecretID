@@ -13,8 +13,9 @@ public class MeterController : MonoBehaviour
         destiredValue = startValue;
     }
 
-    void SetToPosition(float value)
+    public void SetToPosition(float value)
     {
+        value = Mathf.Clamp(value, 0.0f, 1.0f);
         destiredValue = value;
     }
 	

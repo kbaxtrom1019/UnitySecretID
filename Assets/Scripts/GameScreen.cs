@@ -6,6 +6,7 @@ public class GameScreen : MonoBehaviour
 {
     public KeypadController keypadController;
     public MyIconController myIconController;
+    public MeterController progressMeterController;
 
     public void SetKeypadIcon(int keyIndex, Sprite image)
     {
@@ -31,6 +32,11 @@ public class GameScreen : MonoBehaviour
         {
             myIconController.iconImage.sprite = image;
         }
+    }
+
+    public void SetMeterProgress(float value)
+    {
+        progressMeterController.SetToPosition(value);
     }
 
     // Use this for initialization
