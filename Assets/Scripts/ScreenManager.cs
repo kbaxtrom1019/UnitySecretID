@@ -12,6 +12,8 @@ public class ScreenManager : MonoBehaviour
        OKPopup,
        Spinner,
        Game,
+       GameOver,
+       LevelComplete
     };
 
 
@@ -22,7 +24,8 @@ public class ScreenManager : MonoBehaviour
     public GameObject OKPopupScreen;
     public GameObject SpinnerScreen;
     public GameObject GameScreen;
-
+    public GameObject GameOverScreen;
+    public GameObject LevelCompleteScreen;
 
     private static ScreenManager instance;
     public void Awake()
@@ -44,6 +47,8 @@ public class ScreenManager : MonoBehaviour
         OKPopupScreen.SetActive(true);
         SpinnerScreen.SetActive(true);
         GameScreen.SetActive(true);
+        GameOverScreen.SetActive(true);
+        LevelCompleteScreen.SetActive(true);
     }
 
     public static ScreenManager GetInstance()
@@ -85,6 +90,12 @@ public class ScreenManager : MonoBehaviour
 
             case ScreenID.Game:
                 return GameScreen;
+
+            case ScreenID.GameOver:
+                return GameOverScreen;
+
+            case ScreenID.LevelComplete:
+                return LevelCompleteScreen;
         }
         return null;
     }
@@ -125,6 +136,16 @@ public class ScreenManager : MonoBehaviour
         if (obj != null)
         {
             return obj.GetComponent<OKPopupScreen>();
+        }
+        return null;
+    }
+    
+    public LevelCompleteScreen GetLevelCompleteScreen()
+    {
+        GameObject obj = GetScreenObj(ScreenID.LevelComplete);
+        if (obj != null)
+        {
+            return obj.GetComponent<LevelCompleteScreen>();
         }
         return null;
     }

@@ -17,6 +17,7 @@ public class OnlineServicesManger : MonoBehaviour
     public delegate void OnStartGameComplete(StartGameRequestResult result);
     public delegate void OnSetPlayerIconComplete(SetPlayerIconRequestResult result);
     public delegate void OnIconPressedComplete(IconPressedRequestResult result);
+    public delegate void OnLevelFinishedComplte(LevelFinishedRequestResult result);
 
     private static OnlineServicesManger instance;
     public void Awake()
@@ -237,6 +238,28 @@ public class OnlineServicesManger : MonoBehaviour
             if (callback != null)
             {
                 IconPressedRequestResult result = new IconPressedRequestResult(response);
+                callback(result);
+            }
+        });
+    }
+
+    public void LevelFinished(bool success, int initialProgress, OnLevelFinishedComplte callback)
+    {
+        int seedValue = Random.Range(0, 10000000);
+        GSRequestData data = new GSRequestData();
+        data.AddString("room_key", roomKey);
+        data.AddNumber("seed_value", seedValue);
+        data.AddNumber("initial_progress", initialProgress);
+        data.AddBoolean("success", success);
+        new LogEventRequest()
+        .SetEventKey("LEVEL_FINISHED")
+        .SetEventAttribute("finish_data", data)
+        .Send((response) =>
+        {
+
+            if (callback != null)
+            {
+                LevelFinishedRequestResult result = new LevelFinishedRequestResult(response);
                 callback(result);
             }
         });

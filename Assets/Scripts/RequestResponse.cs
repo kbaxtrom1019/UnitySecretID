@@ -4,12 +4,23 @@ using System.Collections.Generic;
 using GameSparks.Api;
 using GameSparks.Core;
 using GameSparks.Api.Requests;
+using System;
 
-public class PlayerData
+public class PlayerData : IComparable<PlayerData>
 {
     public string player_id;
     public string player_name;
     public int player_icon;
+
+    public int CompareTo(PlayerData other)
+    {
+        return player_id.CompareTo(other.player_id);
+    }
+
+    //public int Compare(PlayerData x, PlayerData y)
+    //{
+    //    return x.player_id.CompareTo(y.player_id);
+    //}
 };
 
 
@@ -43,19 +54,34 @@ public abstract class BaseRequestResult
     {
         if (requestResponse.HasErrors)
         {
+            // Need to figure out what to do when a request times out
+            Debug.LogError(requestResponse.Errors.JSON.ToString());
             result = RequestResult.Failure;
         }
         else
         {
+            ProcessResponse(requestResponse);
             result = RequestResult.Success;
         }
-
-        ProcessResponse(requestResponse);
     }
 
     public RequestResult GetRequestResult()
     {
         return result;
+    }
+
+    protected GSData GetResultData(GSTypedResponse requestResponse)
+    {
+        GSData resultData = null;
+        try
+        {
+           resultData = requestResponse.ScriptData.GetGSData("result_data");
+        }
+        catch (System.NullReferenceException e)
+        {
+            Debug.LogException(e);
+        }
+        return resultData;
     }
 
     protected virtual void ProcessResponse(GSTypedResponse requestResponse) { }
@@ -103,7 +129,7 @@ public class CreateLobbyRequestResult : BaseRequestResult
 
     protected override void ProcessResponse(GSTypedResponse requestResponse)
     {
-        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
+        GSData resultData = GetResultData(requestResponse);
         data = JsonUtility.FromJson<Data>(resultData.JSON);
         data.players = GetPlayers(resultData);
 
@@ -139,7 +165,7 @@ public class JoinLobbyRequestResult : BaseRequestResult
 
     protected override void ProcessResponse(GSTypedResponse requestResponse)
     {
-        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
+        GSData resultData = GetResultData(requestResponse);
         data = JsonUtility.FromJson<Data>(resultData.JSON);
         data.players = GetPlayers(resultData);
 
@@ -174,7 +200,7 @@ public class LeaveLobbyRequestResult : BaseRequestResult
 
     protected override void ProcessResponse(GSTypedResponse requestResponse)
     {
-        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
+        GSData resultData = GetResultData(requestResponse);
         data = JsonUtility.FromJson<Data>(resultData.JSON);
 
         if (data.error != null && data.error.Length > 0)
@@ -205,6 +231,7 @@ public class RefreshLobbyRequestResult : BaseRequestResult
         public string error;
         public bool game_started;
         public int seed_value;
+        public int level_index;
         public List<PlayerData> players = new List<PlayerData>();
     };
 
@@ -219,7 +246,7 @@ public class RefreshLobbyRequestResult : BaseRequestResult
 
     protected override void ProcessResponse(GSTypedResponse requestResponse)
     {
-        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
+        GSData resultData = GetResultData(requestResponse);
         data = JsonUtility.FromJson<Data>(resultData.JSON);
         data.players = GetPlayers(resultData);
 
@@ -243,6 +270,7 @@ public class RefreshGameRequestResult : BaseRequestResult
         public string error;
         public List<PlayerData> players = new List<PlayerData>();
         public int progress;
+        public int level_index;
     };
 
     private GameSparks.Api.Responses.LogEventResponse response;
@@ -256,7 +284,7 @@ public class RefreshGameRequestResult : BaseRequestResult
 
     protected override void ProcessResponse(GSTypedResponse requestResponse)
     {
-        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
+        GSData resultData = GetResultData(requestResponse);
         data = JsonUtility.FromJson<Data>(resultData.JSON);
         data.players = GetPlayers(resultData);
 
@@ -293,7 +321,7 @@ public class StartGameRequestResult : BaseRequestResult
 
     protected override void ProcessResponse(GSTypedResponse requestResponse)
     {
-        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
+        GSData resultData = GetResultData(requestResponse);
         data = JsonUtility.FromJson<Data>(resultData.JSON);
         data.players = GetPlayers(resultData);
 
@@ -329,7 +357,7 @@ public class SetPlayerIconRequestResult : BaseRequestResult
 
     protected override void ProcessResponse(GSTypedResponse requestResponse)
     {
-        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
+        GSData resultData = GetResultData(requestResponse);
         data = JsonUtility.FromJson<Data>(resultData.JSON);
 
         if (data.error != null && data.error.Length > 0)
@@ -364,7 +392,7 @@ public class IconPressedRequestResult : BaseRequestResult
 
     protected override void ProcessResponse(GSTypedResponse requestResponse)
     {
-        GSData resultData = requestResponse.ScriptData.GetGSData("result_data");
+        GSData resultData = GetResultData(requestResponse);
         data = JsonUtility.FromJson<Data>(resultData.JSON);
 
         if (data.error != null && data.error.Length > 0)
@@ -380,3 +408,36 @@ public class IconPressedRequestResult : BaseRequestResult
     }
 };
 
+public class LevelFinishedRequestResult : BaseRequestResult
+{
+    public class Data
+    {
+        public string error;
+    };
+
+    private GameSparks.Api.Responses.LogEventResponse response;
+    private Data data;
+
+    public LevelFinishedRequestResult(GameSparks.Api.Responses.LogEventResponse requestResponse)
+    {
+        Init(requestResponse);
+        response = requestResponse;
+    }
+
+    protected override void ProcessResponse(GSTypedResponse requestResponse)
+    {
+        GSData resultData = GetResultData(requestResponse);
+        data = JsonUtility.FromJson<Data>(resultData.JSON);
+
+        if (data.error != null && data.error.Length > 0)
+        {
+            result = RequestResult.Failure;
+        }
+        base.ProcessResponse(requestResponse);
+    }
+
+    public Data GetData()
+    {
+        return data;
+    }
+};

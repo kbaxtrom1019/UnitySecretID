@@ -12,6 +12,8 @@ public class GameManager : MonoBehaviour
         RefreshingLobby,
         Game,
         RefreshingGame,
+        LevelComplete,
+        LevelFailed
     };
 
     public Text KeyText;
@@ -33,12 +35,19 @@ public class GameManager : MonoBehaviour
     private float ProgressLossAccumulator;
     private float ProgressLossPerSecond = 16.0f;
     private int ProgressLoss = 0;
+    private int CurrentLevelIndex;
+    private bool levelFinishedSent = false;
+
+    public AudioClip ButtonAcceptSnd;
+    public AudioClip ButtonCancelSnd;
 
     public void Start()
     {
         ScreenManager screenMgr = ScreenManager.GetInstance();
         screenMgr.ShowSpinner("Connecting...");
         IconResources = new List<Sprite>(Resources.LoadAll<Sprite>("GameIcons"));
+        LevelCompleteScreen levelCompleteScreen = screenMgr.GetLevelCompleteScreen();
+        levelCompleteScreen.SetAnimDoneCallback(LevelCompleteMenu_AnimationComplete);
     }
 
     public void Update()
@@ -69,17 +78,77 @@ public class GameManager : MonoBehaviour
                 onlineServices.RefreshGame(OnRefreshGameComplete);
             }
 
-            ProgressLossAccumulator += (ProgressLossPerSecond * Time.deltaTime);
-            if(ProgressLossAccumulator >= 1.0f)
+            UpdateProgress();
+        }
+
+
+    }
+
+    int GetInitialProgressForLevel(int currLevel)
+    {
+        return InitialProgress;
+    }
+
+    void UpdateProgress()
+    {
+        OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
+        ProgressLossAccumulator += (ProgressLossPerSecond * Time.deltaTime);
+        if (ProgressLossAccumulator >= 1.0f)
+        {
+            ProgressLoss -= 1;
+            ProgressLossAccumulator = 0;
+        }
+
+        float meterValue = ((float)ProgressLoss + (float)Progress) / (float)MaxProgress;
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        GameScreen gameScreen = screenMgr.GetGameScreen();
+        gameScreen.SetMeterProgress(meterValue);
+
+        SendLevelFinished(meterValue);
+    }
+
+    void SendLevelFinished(float meterValue)
+    {
+        OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
+        if (levelFinishedSent == false)
+        {
+            if (meterValue >= 1.0f)
             {
-                ProgressLoss -= 1;
-                ProgressLossAccumulator = 0;
+                onlineServices.LevelFinished(true, GetInitialProgressForLevel(CurrentLevelIndex), OnLevelFinishedCompleted);
+                levelFinishedSent = true;
             }
 
-            float meterValue = ((float)ProgressLoss + (float)Progress) / (float)MaxProgress;
-            ScreenManager screenMgr = ScreenManager.GetInstance();
-            GameScreen gameScreen = screenMgr.GetGameScreen();
-            gameScreen.SetMeterProgress(meterValue);
+            else if (meterValue <= 0.0f)
+            {
+                onlineServices.LevelFinished(false, GetInitialProgressForLevel(CurrentLevelIndex), OnLevelFailedCompleted);
+                levelFinishedSent = true;
+            }
+            
+        }
+   
+    }
+
+    public void OnLevelFinishedCompleted(LevelFinishedRequestResult result)
+    {
+        if (result.GetRequestResult() == LevelFinishedRequestResult.RequestResult.Success)
+        {
+            
+        }
+        else
+        {
+
+        }
+    }
+
+    public void OnLevelFailedCompleted(LevelFinishedRequestResult result)
+    {
+
+        if (result.GetRequestResult() == LevelFinishedRequestResult.RequestResult.Success)
+        {
+        }
+        else
+        {
+
         }
     }
 
@@ -88,6 +157,8 @@ public class GameManager : MonoBehaviour
         ScreenManager screenMgr = ScreenManager.GetInstance();
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.MainMenu);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.CreateGame);
+        SoundManager sndMgr = SoundManager.GetInstance();
+        sndMgr.PlaySingle(ButtonAcceptSnd);
 
     }
 
@@ -96,6 +167,8 @@ public class GameManager : MonoBehaviour
         ScreenManager screenMgr = ScreenManager.GetInstance();
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.MainMenu);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.JoinGame);
+        SoundManager sndMgr = SoundManager.GetInstance();
+        sndMgr.PlaySingle(ButtonAcceptSnd);
     }
 
     public void CreateMenu_OnClickedBackButton()
@@ -103,10 +176,14 @@ public class GameManager : MonoBehaviour
         ScreenManager screenMgr = ScreenManager.GetInstance();
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
+        SoundManager sndMgr = SoundManager.GetInstance();
+        sndMgr.PlaySingle(ButtonCancelSnd);
     }
 
     public void CreateMenu_OnClickedCreateGame()
     {
+        SoundManager sndMgr = SoundManager.GetInstance();
+        sndMgr.PlaySingle(ButtonAcceptSnd);
         ScreenManager screenMgr = ScreenManager.GetInstance();
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         if (onlineServices.IsConnected())
@@ -131,6 +208,8 @@ public class GameManager : MonoBehaviour
 
     public void JoinMenu_OnClickedJoingame()
     {
+        SoundManager sndMgr = SoundManager.GetInstance();
+        sndMgr.PlaySingle(ButtonAcceptSnd);
         ScreenManager screenMgr = ScreenManager.GetInstance();
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         if (onlineServices.IsConnected())
@@ -167,6 +246,8 @@ public class GameManager : MonoBehaviour
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         onlineServices.LeaveLobby(null);
         CurrentState = GameState.None;
+        SoundManager sndMgr = SoundManager.GetInstance();
+        sndMgr.PlaySingle(ButtonCancelSnd);
     }
 
     public void LobbyMenu_OnClickedStart()
@@ -175,8 +256,10 @@ public class GameManager : MonoBehaviour
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Lobby);
         screenMgr.ShowSpinner("Starting Game...");
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
-        onlineServices.StartGame(InitialProgress, OnStartGameCompleted);
-        Progress = InitialProgress;
+        int initProgress = GetInitialProgressForLevel(CurrentLevelIndex);
+        onlineServices.StartGame(initProgress, OnStartGameCompleted);
+        SoundManager sndMgr = SoundManager.GetInstance();
+        sndMgr.PlaySingle(ButtonAcceptSnd);
     }
 
     public void JoinMenu_OnClickedBack()
@@ -184,12 +267,33 @@ public class GameManager : MonoBehaviour
         ScreenManager screenMgr = ScreenManager.GetInstance();
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.JoinGame);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
+        SoundManager sndMgr = SoundManager.GetInstance();
+        sndMgr.PlaySingle(ButtonCancelSnd);
     }
 
     public void OKPopup_OnClickedOK()
     {
         ScreenManager screenMgr = ScreenManager.GetInstance();
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.OKPopup);
+        SoundManager sndMgr = SoundManager.GetInstance();
+        sndMgr.PlaySingle(ButtonAcceptSnd);
+    }
+
+    public void GameOverMenu_ClickedOK()
+    {
+        CurrentState = GameState.None;
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.GameOver);
+        screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
+        SoundManager sndMgr = SoundManager.GetInstance();
+        sndMgr.PlaySingle(ButtonAcceptSnd);
+    }
+
+    public void LevelCompleteMenu_AnimationComplete()
+    {
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
+        onlineServices.RefreshLobby(OnRefreshLobbyForLevelComplete);
     }
 
     void OnAuthenticationCompleted(AuthenticationRequestResult result)
@@ -254,10 +358,14 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void SetupGame(int seedValue, List<PlayerData> players)
+    void SetupGame(int levelIndex, int seedValue, List<PlayerData> players)
     {
+        CurrentLevelIndex = levelIndex;
+        levelFinishedSent = false;
+
         int restoreSeed = Random.Range(-5000000, 5000000);
         Debug.Log("restoreSeed:" + restoreSeed);
+        Debug.Log("SettingSeedValue:" + seedValue);
         Random.InitState(seedValue);
         players.Sort();
 
@@ -270,6 +378,7 @@ public class GameManager : MonoBehaviour
         ScreenManager screenMgr = ScreenManager.GetInstance();
         GameScreen gameScreen = screenMgr.GetGameScreen();
         playerIcons.Clear();
+
         foreach (PlayerData player in players)
         {
             List<int> tempPlayerIcons = new List<int>();
@@ -300,7 +409,8 @@ public class GameManager : MonoBehaviour
 
         }
 
-        float meterValue = (float)InitialProgress / (float)MaxProgress;
+        int initProgress = GetInitialProgressForLevel(CurrentLevelIndex);
+        float meterValue = (float)initProgress / (float)MaxProgress;
         gameScreen.SetMeterProgress(meterValue);
 
 
@@ -429,7 +539,9 @@ public class GameManager : MonoBehaviour
                 {
                     screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
                 }
-                SetupGame(data.seed_value, data.players);
+                Progress = GetInitialProgressForLevel(CurrentLevelIndex);
+                ProgressLoss = 0;
+                SetupGame(data.level_index, data.seed_value, data.players);
                 screenMgr.TransitionScreenOn(ScreenManager.ScreenID.Game);
             }
             else
@@ -444,6 +556,22 @@ public class GameManager : MonoBehaviour
             Debug.LogError("Refresh Game Error");
         }
         ResetRefreshTimer();
+    }
+
+    void OnRefreshLobbyForLevelComplete(RefreshLobbyRequestResult result)
+    {
+        if (result.GetRequestResult() == RefreshLobbyRequestResult.RequestResult.Success)
+        {
+            CurrentState = GameState.Game;
+            RefreshLobbyRequestResult.Data data = result.GetData();
+            ScreenManager screenMgr = ScreenManager.GetInstance();
+            Progress = GetInitialProgressForLevel(CurrentLevelIndex);
+            ProgressLoss = 0;
+            SetupGame(data.level_index, data.seed_value, data.players);
+            screenMgr.TransitionScreenOff(ScreenManager.ScreenID.LevelComplete);
+            screenMgr.TransitionScreenOn(ScreenManager.ScreenID.Game);
+
+        }
     }
 
     void UpdateLobby(List<PlayerData> players)
@@ -512,22 +640,44 @@ public class GameManager : MonoBehaviour
     void OnRefreshGameComplete(RefreshGameRequestResult result)
     {
 
+        ScreenManager screenMgr = ScreenManager.GetInstance();
         if (result.GetRequestResult() == RefreshGameRequestResult.RequestResult.Success)
         {
             RefreshGameRequestResult.Data data = result.GetData();
             if(CurrentState == GameState.Game || CurrentState == GameState.RefreshingGame)
             {
-                Progress = data.progress;
-                foreach (PlayerData player in data.players)
+                if(data.level_index == -1)
                 {
-                    if (player.player_id == LocalPlayerID)
+                    // Level Failed
+                    CurrentState = GameState.LevelFailed;
+                    screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Game);
+                    screenMgr.TransitionScreenOn(ScreenManager.ScreenID.GameOver);
+                }
+                else if(data.level_index > CurrentLevelIndex)
+                {
+                    // Level complete
+                    CurrentState = GameState.LevelComplete;
+                    screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Game);
+                    screenMgr.TransitionScreenOn(ScreenManager.ScreenID.LevelComplete);
+                    CurrentLevelIndex = data.level_index;
+                }
+                else
+                {
+                    // Were still mid game
+                    Progress = data.progress;
+                    foreach (PlayerData player in data.players)
                     {
-                        if (player.player_icon == -2)
+                        if (player.player_id == LocalPlayerID)
                         {
-                            PickMyIcon();
+                            if (player.player_icon == -2)
+                            {
+                                PickMyIcon();
+                            }
                         }
                     }
+                    CurrentState = GameState.Game;
                 }
+
             }
 
         }
@@ -536,7 +686,6 @@ public class GameManager : MonoBehaviour
             Debug.LogError("Refresh Game Error");
         }
 
-        CurrentState = GameState.Game;
         ResetRefreshTimer();
     }
 }
