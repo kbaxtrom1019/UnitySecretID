@@ -39,6 +39,16 @@ public class GameScreen : MonoBehaviour
         progressMeterController.SetToPosition(value);
     }
 
+    public void PlayIconCompleteAnim()
+    {
+        GetComponent<Animator>().SetBool("IconComplete", true);
+    }
+
+    public void ClearIconCompleteFlag()
+    {
+        GetComponent<Animator>().SetBool("IconComplete", false);
+    }
+
     // Use this for initialization
     void Start ()
     {

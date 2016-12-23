@@ -27,6 +27,17 @@ public class SoundManager : MonoBehaviour
         return instance;
     }
 
+    public void PlayMusic(AudioClip clip)
+    {
+        musicSource.clip = clip;
+        musicSource.Play();
+    }
+
+    public void StopMusic()
+    {
+        musicSource.Stop();
+    }
+
     //Used to play single sound clips.
     public void PlaySingle(AudioClip clip)
 	{

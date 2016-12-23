@@ -33,13 +33,19 @@ public class GameManager : MonoBehaviour
     private int InitialProgress = 500;
     private int Progress;
     private float ProgressLossAccumulator;
-    private float ProgressLossPerSecond = 16.0f;
+    private float ProgressLossPerSecond = 20.0f;
     private int ProgressLoss = 0;
     private int CurrentLevelIndex;
     private bool levelFinishedSent = false;
 
     public AudioClip ButtonAcceptSnd;
     public AudioClip ButtonCancelSnd;
+    public AudioClip ButtonClickSnd;
+    public AudioClip IconCompleteSnd;
+    public AudioClip LevelCompleteSnd;
+    public AudioClip GameOverSnd;
+    public AudioClip GameMusic;
+    public AudioClip LobbyMusic;
 
     public void Start()
     {
@@ -48,6 +54,8 @@ public class GameManager : MonoBehaviour
         IconResources = new List<Sprite>(Resources.LoadAll<Sprite>("GameIcons"));
         LevelCompleteScreen levelCompleteScreen = screenMgr.GetLevelCompleteScreen();
         levelCompleteScreen.SetAnimDoneCallback(LevelCompleteMenu_AnimationComplete);
+        SoundManager sndManager = SoundManager.GetInstance();
+        sndManager.PlayMusic(LobbyMusic);
     }
 
     public void Update()
@@ -287,6 +295,7 @@ public class GameManager : MonoBehaviour
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
         SoundManager sndMgr = SoundManager.GetInstance();
         sndMgr.PlaySingle(ButtonAcceptSnd);
+        sndMgr.StopMusic();
     }
 
     public void LevelCompleteMenu_AnimationComplete()
@@ -415,7 +424,7 @@ public class GameManager : MonoBehaviour
 
 
         Random.InitState(restoreSeed);
-        PickMyIcon();
+        PickMyIcon(false);
     }
 
     public void GameMenu_OnIconButtonPressed(int buttonIndex)
@@ -432,6 +441,9 @@ public class GameManager : MonoBehaviour
 
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         onlineServices.IconButtonPressed(pressedIndex, CorrectButtonAward, IncorrectButtonAward, OnIconButtonPressedComplete);
+
+        SoundManager sndManager = SoundManager.GetInstance();
+        sndManager.PlaySingle(ButtonClickSnd);
     }
 
     void OnIconButtonPressedComplete(IconPressedRequestResult result)
@@ -455,7 +467,7 @@ public class GameManager : MonoBehaviour
 
     }
 
-    void PickMyIcon()
+    void PickMyIcon(bool iconComplete)
     {
         List<string> playerKeys = new List<string>(playerIcons.Keys);
         if (playerKeys.Count > 1)
@@ -471,6 +483,14 @@ public class GameManager : MonoBehaviour
 
         ScreenManager screenMgr = ScreenManager.GetInstance();
         GameScreen gameScreen = screenMgr.GetGameScreen();
+        
+        if(iconComplete)
+        {
+            gameScreen.PlayIconCompleteAnim();
+            SoundManager sndManager = SoundManager.GetInstance();
+            sndManager.PlaySingle(IconCompleteSnd);
+        }
+
         gameScreen.SetMyIcon(img);
 
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
@@ -542,6 +562,8 @@ public class GameManager : MonoBehaviour
                 Progress = GetInitialProgressForLevel(CurrentLevelIndex);
                 ProgressLoss = 0;
                 SetupGame(data.level_index, data.seed_value, data.players);
+                SoundManager sndManager = SoundManager.GetInstance();
+                sndManager.PlayMusic(GameMusic);
                 screenMgr.TransitionScreenOn(ScreenManager.ScreenID.Game);
             }
             else
@@ -639,7 +661,7 @@ public class GameManager : MonoBehaviour
 
     void OnRefreshGameComplete(RefreshGameRequestResult result)
     {
-
+        SoundManager sndManager = SoundManager.GetInstance();
         ScreenManager screenMgr = ScreenManager.GetInstance();
         if (result.GetRequestResult() == RefreshGameRequestResult.RequestResult.Success)
         {
@@ -652,6 +674,7 @@ public class GameManager : MonoBehaviour
                     CurrentState = GameState.LevelFailed;
                     screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Game);
                     screenMgr.TransitionScreenOn(ScreenManager.ScreenID.GameOver);
+                    sndManager.PlaySingle(GameOverSnd);
                 }
                 else if(data.level_index > CurrentLevelIndex)
                 {
@@ -660,6 +683,7 @@ public class GameManager : MonoBehaviour
                     screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Game);
                     screenMgr.TransitionScreenOn(ScreenManager.ScreenID.LevelComplete);
                     CurrentLevelIndex = data.level_index;
+                    sndManager.PlaySingle(LevelCompleteSnd);
                 }
                 else
                 {
@@ -671,7 +695,7 @@ public class GameManager : MonoBehaviour
                         {
                             if (player.player_icon == -2)
                             {
-                                PickMyIcon();
+                                PickMyIcon(true);
                             }
                         }
                     }

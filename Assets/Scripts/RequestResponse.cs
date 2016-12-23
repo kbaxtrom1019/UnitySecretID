@@ -61,7 +61,7 @@ public abstract class BaseRequestResult
         else
         {
             ProcessResponse(requestResponse);
-            result = RequestResult.Success;
+            
         }
     }
 
@@ -137,6 +137,10 @@ public class CreateLobbyRequestResult : BaseRequestResult
         {
             result = RequestResult.Failure;
         }
+        else
+        {
+            result = RequestResult.Success;
+        }
     }
 
     public Data GetData()
@@ -172,6 +176,10 @@ public class JoinLobbyRequestResult : BaseRequestResult
         if (data.error != null && data.error.Length > 0)
         {
             result = RequestResult.Failure;
+        }
+        else
+        {
+            result = RequestResult.Success;
         }
 
         base.ProcessResponse(requestResponse);
@@ -254,6 +262,10 @@ public class RefreshLobbyRequestResult : BaseRequestResult
         {
             result = RequestResult.Failure;
         }
+        else
+        {
+            result = RequestResult.Success;
+        }
         base.ProcessResponse(requestResponse);
     }
 
@@ -292,6 +304,10 @@ public class RefreshGameRequestResult : BaseRequestResult
         {
             result = RequestResult.Failure;
         }
+        else
+        {
+            result = RequestResult.Success;
+        }
         base.ProcessResponse(requestResponse);
     }
 
@@ -329,6 +345,10 @@ public class StartGameRequestResult : BaseRequestResult
         {
             result = RequestResult.Failure;
         }
+        else
+        {
+            result = RequestResult.Success;
+        }
 
         base.ProcessResponse(requestResponse);
     }
@@ -363,6 +383,10 @@ public class SetPlayerIconRequestResult : BaseRequestResult
         if (data.error != null && data.error.Length > 0)
         {
             result = RequestResult.Failure;
+        }
+        else
+        {
+            result = RequestResult.Success;
         }
         base.ProcessResponse(requestResponse);
     }
@@ -399,6 +423,10 @@ public class IconPressedRequestResult : BaseRequestResult
         {
             result = RequestResult.Failure;
         }
+        else
+        {
+            result = RequestResult.Success;
+        }
         base.ProcessResponse(requestResponse);
     }
 
@@ -432,6 +460,10 @@ public class LevelFinishedRequestResult : BaseRequestResult
         if (data.error != null && data.error.Length > 0)
         {
             result = RequestResult.Failure;
+        }
+        else
+        {
+            result = RequestResult.Success;
         }
         base.ProcessResponse(requestResponse);
     }
