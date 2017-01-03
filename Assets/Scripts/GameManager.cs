@@ -22,7 +22,7 @@ public class GameManager : MonoBehaviour
     private bool Initalized = false;
     private GameState CurrentState = GameState.None;
     private float RefreshTimer;
-    private const float RefreshTime = 2.0f;
+    private const float RefreshTime = 0.5f;
     private string LocalPlayerID = null;
     private List<Sprite> IconResources;
     private Dictionary<string, List<int>> playerIcons = new Dictionary<string, List<int>>();
@@ -295,7 +295,7 @@ public class GameManager : MonoBehaviour
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
         SoundManager sndMgr = SoundManager.GetInstance();
         sndMgr.PlaySingle(ButtonAcceptSnd);
-        sndMgr.StopMusic();
+        sndMgr.PlayMusic(LobbyMusic);
     }
 
     public void LevelCompleteMenu_AnimationComplete()
@@ -475,9 +475,9 @@ public class GameManager : MonoBehaviour
             playerKeys.Remove(LocalPlayerID);
         }
 
-        int randPlayerIndex = Random.Range(0, playerKeys.Count - 1);
+        int randPlayerIndex = Random.Range(0, playerKeys.Count);
         List<int> tempPlayerIcons = playerIcons[playerKeys[randPlayerIndex]];
-        int randomIndex = Random.Range(0, tempPlayerIcons.Count - 1);
+        int randomIndex = Random.Range(0, tempPlayerIcons.Count);
         int iconIndex = tempPlayerIcons[randomIndex];
         Sprite img = IconResources[iconIndex];
 
@@ -519,7 +519,7 @@ public class GameManager : MonoBehaviour
         GameObject item = GameObject.Instantiate(TextItemPrefab);
         LobbyOccupant occupant = item.GetComponent<LobbyOccupant>();
         occupant.SetPlayerNameText(player.player_name, player.player_id);
-        item.transform.SetParent(RoomListPanel.transform);
+        item.transform.SetParent(RoomListPanel.transform, false);
     }
 
     void SetupLobby(string roomKey, List<PlayerData> players)

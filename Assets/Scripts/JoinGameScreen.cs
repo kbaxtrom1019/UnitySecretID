@@ -14,7 +14,7 @@ public class JoinGameScreen : MonoBehaviour
 
     public string GetRoomKeyText()
     {
-        return RoomKeyText.text;
+        return RoomKeyText.text.ToUpper();
     }
 
 }
