@@ -2,6 +2,7 @@
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
+using EazyTools.SoundManager;
 
 public class GameManager : MonoBehaviour
 {
@@ -33,14 +34,14 @@ public class GameManager : MonoBehaviour
     private int InitialProgress = 500;
     private int Progress;
     private float ProgressLossAccumulator;
-    private float ProgressLossPerSecond = 20.0f;
+    private float ProgressLossPerSecond = 40.0f;
     private int ProgressLoss = 0;
     private int CurrentLevelIndex;
     private bool levelFinishedSent = false;
 
-    public AudioClip ButtonAcceptSnd;
-    public AudioClip ButtonCancelSnd;
-    public AudioClip ButtonClickSnd;
+    public AudioClip ButtonNavSnd;
+    public AudioClip PopupErrorSnd;
+    public AudioClip IconClickSnd;
     public AudioClip IconCompleteSnd;
     public AudioClip LevelCompleteSnd;
     public AudioClip GameOverSnd;
@@ -54,8 +55,7 @@ public class GameManager : MonoBehaviour
         IconResources = new List<Sprite>(Resources.LoadAll<Sprite>("GameIcons"));
         LevelCompleteScreen levelCompleteScreen = screenMgr.GetLevelCompleteScreen();
         levelCompleteScreen.SetAnimDoneCallback(LevelCompleteMenu_AnimationComplete);
-        SoundManager sndManager = SoundManager.GetInstance();
-        sndManager.PlayMusic(LobbyMusic);
+        SoundManager.PlayMusic(LobbyMusic, SoundManager.globalMusicVolume, true, true);
     }
 
     public void Update()
@@ -165,8 +165,7 @@ public class GameManager : MonoBehaviour
         ScreenManager screenMgr = ScreenManager.GetInstance();
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.MainMenu);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.CreateGame);
-        SoundManager sndMgr = SoundManager.GetInstance();
-        sndMgr.PlaySingle(ButtonAcceptSnd);
+        SoundManager.PlayUISound(ButtonNavSnd);
 
     }
 
@@ -175,8 +174,7 @@ public class GameManager : MonoBehaviour
         ScreenManager screenMgr = ScreenManager.GetInstance();
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.MainMenu);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.JoinGame);
-        SoundManager sndMgr = SoundManager.GetInstance();
-        sndMgr.PlaySingle(ButtonAcceptSnd);
+        SoundManager.PlayUISound(ButtonNavSnd);
     }
 
     public void CreateMenu_OnClickedBackButton()
@@ -184,14 +182,12 @@ public class GameManager : MonoBehaviour
         ScreenManager screenMgr = ScreenManager.GetInstance();
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
-        SoundManager sndMgr = SoundManager.GetInstance();
-        sndMgr.PlaySingle(ButtonCancelSnd);
+        SoundManager.PlayUISound(ButtonNavSnd);
     }
 
     public void CreateMenu_OnClickedCreateGame()
     {
-        SoundManager sndMgr = SoundManager.GetInstance();
-        sndMgr.PlaySingle(ButtonAcceptSnd);
+        
         ScreenManager screenMgr = ScreenManager.GetInstance();
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         if (onlineServices.IsConnected())
@@ -200,12 +196,14 @@ public class GameManager : MonoBehaviour
             if (createScreen.GetInputText().Length <= 0)
             {
                 screenMgr.ShowOKPopup("Please enter a name first");
+                SoundManager.PlayUISound(PopupErrorSnd);
             }
             else
             {
                 onlineServices.CreateLobby(createScreen.GetInputText(), OnCreateGameComplete);
                 screenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
                 screenMgr.ShowSpinner("Creating Game...");
+                SoundManager.PlayUISound(ButtonNavSnd);
             }
         }
         else
@@ -216,8 +214,7 @@ public class GameManager : MonoBehaviour
 
     public void JoinMenu_OnClickedJoingame()
     {
-        SoundManager sndMgr = SoundManager.GetInstance();
-        sndMgr.PlaySingle(ButtonAcceptSnd);
+        
         ScreenManager screenMgr = ScreenManager.GetInstance();
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         if (onlineServices.IsConnected())
@@ -226,13 +223,16 @@ public class GameManager : MonoBehaviour
             if (joinScreen.GetNameText().Length <= 0)
             {
                 screenMgr.ShowOKPopup("Please enter a name first");
+                SoundManager.PlayUISound(PopupErrorSnd);
             }
             else if (joinScreen.GetRoomKeyText().Length <= 0)
             {
                 screenMgr.ShowOKPopup("Please enter a room key first");
+                SoundManager.PlayUISound(PopupErrorSnd);
             }
             else
             {
+                SoundManager.PlayUISound(ButtonNavSnd);
                 onlineServices.JoinLobby(joinScreen.GetNameText(), joinScreen.GetRoomKeyText(), OnJoinGameComplete);
                 screenMgr.TransitionScreenOff(ScreenManager.ScreenID.JoinGame);
                 screenMgr.ShowSpinner("Joining Game...");
@@ -254,8 +254,7 @@ public class GameManager : MonoBehaviour
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         onlineServices.LeaveLobby(null);
         CurrentState = GameState.None;
-        SoundManager sndMgr = SoundManager.GetInstance();
-        sndMgr.PlaySingle(ButtonCancelSnd);
+        SoundManager.PlayUISound(ButtonNavSnd);
     }
 
     public void LobbyMenu_OnClickedStart()
@@ -266,8 +265,7 @@ public class GameManager : MonoBehaviour
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         int initProgress = GetInitialProgressForLevel(CurrentLevelIndex);
         onlineServices.StartGame(initProgress, OnStartGameCompleted);
-        SoundManager sndMgr = SoundManager.GetInstance();
-        sndMgr.PlaySingle(ButtonAcceptSnd);
+        SoundManager.PlayUISound(ButtonNavSnd);
     }
 
     public void JoinMenu_OnClickedBack()
@@ -275,16 +273,14 @@ public class GameManager : MonoBehaviour
         ScreenManager screenMgr = ScreenManager.GetInstance();
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.JoinGame);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
-        SoundManager sndMgr = SoundManager.GetInstance();
-        sndMgr.PlaySingle(ButtonCancelSnd);
+        SoundManager.PlayUISound(ButtonNavSnd);
     }
 
     public void OKPopup_OnClickedOK()
     {
         ScreenManager screenMgr = ScreenManager.GetInstance();
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.OKPopup);
-        SoundManager sndMgr = SoundManager.GetInstance();
-        sndMgr.PlaySingle(ButtonAcceptSnd);
+        SoundManager.PlayUISound(ButtonNavSnd);
     }
 
     public void GameOverMenu_ClickedOK()
@@ -293,9 +289,8 @@ public class GameManager : MonoBehaviour
         ScreenManager screenMgr = ScreenManager.GetInstance();
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.GameOver);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
-        SoundManager sndMgr = SoundManager.GetInstance();
-        sndMgr.PlaySingle(ButtonAcceptSnd);
-        sndMgr.PlayMusic(LobbyMusic);
+        SoundManager.PlayMusic(LobbyMusic, SoundManager.globalMusicVolume, true, true);
+        SoundManager.PlayUISound(ButtonNavSnd);
     }
 
     public void LevelCompleteMenu_AnimationComplete()
@@ -351,6 +346,7 @@ public class GameManager : MonoBehaviour
             screenMgr.ShowOKPopup("An error occured while creating joining the game.  Please try again");
             screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
             screenMgr.TransitionScreenOn(ScreenManager.ScreenID.JoinGame);
+            SoundManager.PlayUISound(PopupErrorSnd);
         }
     }
 
@@ -442,8 +438,7 @@ public class GameManager : MonoBehaviour
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         onlineServices.IconButtonPressed(pressedIndex, CorrectButtonAward, IncorrectButtonAward, OnIconButtonPressedComplete);
 
-        SoundManager sndManager = SoundManager.GetInstance();
-        sndManager.PlaySingle(ButtonClickSnd);
+        SoundManager.PlayUISound(IconClickSnd);
     }
 
     void OnIconButtonPressedComplete(IconPressedRequestResult result)
@@ -487,8 +482,7 @@ public class GameManager : MonoBehaviour
         if(iconComplete)
         {
             gameScreen.PlayIconCompleteAnim();
-            SoundManager sndManager = SoundManager.GetInstance();
-            sndManager.PlaySingle(IconCompleteSnd);
+            SoundManager.PlayUISound(IconCompleteSnd);
         }
 
         gameScreen.SetMyIcon(img);
@@ -562,8 +556,7 @@ public class GameManager : MonoBehaviour
                 Progress = GetInitialProgressForLevel(CurrentLevelIndex);
                 ProgressLoss = 0;
                 SetupGame(data.level_index, data.seed_value, data.players);
-                SoundManager sndManager = SoundManager.GetInstance();
-                sndManager.PlayMusic(GameMusic);
+                SoundManager.PlayMusic(GameMusic, SoundManager.globalMusicVolume, true, true);
                 screenMgr.TransitionScreenOn(ScreenManager.ScreenID.Game);
             }
             else
@@ -661,7 +654,6 @@ public class GameManager : MonoBehaviour
 
     void OnRefreshGameComplete(RefreshGameRequestResult result)
     {
-        SoundManager sndManager = SoundManager.GetInstance();
         ScreenManager screenMgr = ScreenManager.GetInstance();
         if (result.GetRequestResult() == RefreshGameRequestResult.RequestResult.Success)
         {
@@ -674,7 +666,7 @@ public class GameManager : MonoBehaviour
                     CurrentState = GameState.LevelFailed;
                     screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Game);
                     screenMgr.TransitionScreenOn(ScreenManager.ScreenID.GameOver);
-                    sndManager.PlaySingle(GameOverSnd);
+                    SoundManager.PlayUISound(GameOverSnd);
                 }
                 else if(data.level_index > CurrentLevelIndex)
                 {
@@ -683,7 +675,7 @@ public class GameManager : MonoBehaviour
                     screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Game);
                     screenMgr.TransitionScreenOn(ScreenManager.ScreenID.LevelComplete);
                     CurrentLevelIndex = data.level_index;
-                    sndManager.PlaySingle(LevelCompleteSnd);
+                    SoundManager.PlayUISound(LevelCompleteSnd);
                 }
                 else
                 {
