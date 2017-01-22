@@ -27,7 +27,7 @@ public class GameManager : MonoBehaviour
     private string LocalPlayerID = null;
     private List<Sprite> IconResources;
     private Dictionary<string, List<int>> playerIcons = new Dictionary<string, List<int>>();
-    private const int MaxNumIcons = 9;
+    private const int MaxNumIcons = 12;
     private int CorrectButtonAward = 100;
     private int IncorrectButtonAward = -50;
     private int MaxProgress = 1000;
@@ -38,6 +38,9 @@ public class GameManager : MonoBehaviour
     private int ProgressLoss = 0;
     private int CurrentLevelIndex;
     private bool levelFinishedSent = false;
+    private float MaxIconTime = 10.0f;
+    private float myIconTimer;
+    private int gameMusicID;
 
     public AudioClip ButtonNavSnd;
     public AudioClip PopupErrorSnd;
@@ -47,6 +50,7 @@ public class GameManager : MonoBehaviour
     public AudioClip GameOverSnd;
     public AudioClip GameMusic;
     public AudioClip LobbyMusic;
+    public AudioClip FailedIconSnd;
 
     public void Start()
     {
@@ -89,6 +93,32 @@ public class GameManager : MonoBehaviour
             UpdateProgress();
         }
 
+        if(CurrentState == GameState.Game || CurrentState == GameState.RefreshingGame)
+        {
+            myIconTimer -= Time.deltaTime;
+            float iconTimerValue = myIconTimer / MaxIconTime;
+            iconTimerValue = Mathf.Clamp01(iconTimerValue);
+            ScreenManager screenMgr = ScreenManager.GetInstance();
+            GameScreen gameScreen = screenMgr.GetGameScreen();
+            gameScreen.SetMyIconTimer(iconTimerValue);
+            if (myIconTimer <= 0.0f)
+            {
+                SoundManager.PlayUISound(FailedIconSnd);
+                PickMyIcon(false);
+            }
+
+            float meterValue = ((float)ProgressLoss + (float)Progress) / (float)MaxProgress;
+            if(meterValue <= 0.25f || meterValue >= 0.8f)
+            {
+                Audio gameMusic = SoundManager.GetAudio(gameMusicID);
+                gameMusic.audioSource.pitch = 1.08f;
+            }
+            else if(meterValue >= 0.35f || meterValue <= 0.7f)
+            {
+                Audio gameMusic = SoundManager.GetAudio(gameMusicID);
+                gameMusic.audioSource.pitch = 1.0f;
+            }
+        }
 
     }
 
@@ -486,9 +516,11 @@ public class GameManager : MonoBehaviour
         }
 
         gameScreen.SetMyIcon(img);
+        gameScreen.SetMyIconTimer(1.0f);
 
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         onlineServices.SetPlayerIcon(iconIndex, OnSetPlayerIconComplete);
+        myIconTimer = MaxIconTime;
     }
 
     void OnSetPlayerIconComplete(SetPlayerIconRequestResult result)
@@ -556,7 +588,7 @@ public class GameManager : MonoBehaviour
                 Progress = GetInitialProgressForLevel(CurrentLevelIndex);
                 ProgressLoss = 0;
                 SetupGame(data.level_index, data.seed_value, data.players);
-                SoundManager.PlayMusic(GameMusic, SoundManager.globalMusicVolume, true, true);
+                gameMusicID = SoundManager.PlayMusic(GameMusic, SoundManager.globalMusicVolume, true, true);
                 screenMgr.TransitionScreenOn(ScreenManager.ScreenID.Game);
             }
             else

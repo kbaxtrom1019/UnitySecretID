@@ -34,6 +34,14 @@ public class GameScreen : MonoBehaviour
         }
     }
 
+    public void SetMyIconTimer(float value)
+    {
+        if (myIconController != null)
+        {
+            myIconController.SetIconTimer(value);
+        }
+    }
+
     public void SetMeterProgress(float value)
     {
         progressMeterController.SetToPosition(value);
