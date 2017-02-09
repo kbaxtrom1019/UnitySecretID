@@ -56,7 +56,8 @@ public class GameManager : MonoBehaviour
     {
         ScreenManager screenMgr = ScreenManager.GetInstance();
         screenMgr.ShowSpinner("Connecting...");
-        IconResources = new List<Sprite>(Resources.LoadAll<Sprite>("GameIcons"));
+        IconLibrary library = IconLibrary.GetInstance();
+        IconResources = library.GetAllIcons();
         LevelCompleteScreen levelCompleteScreen = screenMgr.GetLevelCompleteScreen();
         levelCompleteScreen.SetAnimDoneCallback(LevelCompleteMenu_AnimationComplete);
         SoundManager.PlayMusic(LobbyMusic, SoundManager.globalMusicVolume, true, true);
