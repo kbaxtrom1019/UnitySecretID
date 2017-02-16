@@ -4,10 +4,15 @@ using UnityEngine.UI;
 
 public class CreateGameScreen : MonoBehaviour
 {
-    public Text InputText;
+    public InputField NameInput;
 
-    public string GetInputText()
+    public string GetNameText()
     {
-        return InputText.text;
+        return NameInput.text;
+    }
+
+    public void SetNameText(string text)
+    {
+        NameInput.text = text;
     }
 }

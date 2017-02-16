@@ -4,12 +4,17 @@ using UnityEngine.UI;
 
 public class JoinGameScreen : MonoBehaviour
 {
-    public Text NameText;
-    public Text RoomKeyText;
+    public InputField RoomKeyText;
+    public InputField NameInput;
 
     public string GetNameText()
     {
-        return NameText.text;
+        return NameInput.text;
+    }
+
+    public void SetNameText(string text)
+    {
+        NameInput.text = text;
     }
 
     public string GetRoomKeyText()

@@ -216,6 +216,14 @@ public class GameManager : MonoBehaviour
         SoundManager.PlayUISound(ButtonNavSnd);
     }
 
+    public void CreateMenu_OnNameInputEnd()
+    {
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        JoinGameScreen joinScreen = screenMgr.GetJoinGameScreen();
+        CreateGameScreen createScreen = screenMgr.GetCreateGameScreen();
+        joinScreen.SetNameText(createScreen.GetNameText());
+    }
+
     public void CreateMenu_OnClickedCreateGame()
     {
         
@@ -224,14 +232,14 @@ public class GameManager : MonoBehaviour
         if (onlineServices.IsConnected())
         {
             CreateGameScreen createScreen = screenMgr.GetCreateGameScreen();
-            if (createScreen.GetInputText().Length <= 0)
+            if (createScreen.GetNameText().Length <= 0)
             {
                 screenMgr.ShowOKPopup("Please enter a name first");
                 SoundManager.PlayUISound(PopupErrorSnd);
             }
             else
             {
-                onlineServices.CreateLobby(createScreen.GetInputText(), OnCreateGameComplete);
+                onlineServices.CreateLobby(createScreen.GetNameText(), OnCreateGameComplete);
                 screenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
                 screenMgr.ShowSpinner("Creating Game...");
                 SoundManager.PlayUISound(ButtonNavSnd);
@@ -276,6 +284,22 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void JoinMenu_OnClickedBack()
+    {
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.JoinGame);
+        screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
+        SoundManager.PlayUISound(ButtonNavSnd);
+    }
+
+    public void JoinMenu_OnNameInputEnd()
+    {
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        JoinGameScreen joinScreen = screenMgr.GetJoinGameScreen();
+        CreateGameScreen createScreen = screenMgr.GetCreateGameScreen();
+        createScreen.SetNameText(joinScreen.GetNameText());
+    }
+
 
     public void LobbyMenu_OnClickedBack()
     {
@@ -296,14 +320,6 @@ public class GameManager : MonoBehaviour
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         int initProgress = GetInitialProgressForLevel(CurrentLevelIndex);
         onlineServices.StartGame(initProgress, OnStartGameCompleted);
-        SoundManager.PlayUISound(ButtonNavSnd);
-    }
-
-    public void JoinMenu_OnClickedBack()
-    {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
-        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.JoinGame);
-        screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
         SoundManager.PlayUISound(ButtonNavSnd);
     }
 
