@@ -23,6 +23,15 @@ public class IconLibrary : MonoBehaviour
 
     public static IconLibrary GetInstance()
     {
+        if (instance == null)
+        {
+            instance = (IconLibrary)FindObjectOfType(typeof(IconLibrary));
+            if (instance == null)
+            {
+                // Create gameObject and add component
+                instance = (new GameObject("IconLibrary")).AddComponent<IconLibrary>();
+            }
+        }
         return instance;
     }
 
