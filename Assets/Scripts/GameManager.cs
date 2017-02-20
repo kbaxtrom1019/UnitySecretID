@@ -40,7 +40,6 @@ public class GameManager : MonoBehaviour
     private bool levelFinishedSent = false;
     private float MaxIconTime = 10.0f;
     private float myIconTimer;
-    private int gameMusicID;
 
     public AudioClip ButtonNavSnd;
     public AudioClip PopupErrorSnd;
@@ -111,13 +110,9 @@ public class GameManager : MonoBehaviour
             float meterValue = ((float)ProgressLoss + (float)Progress) / (float)MaxProgress;
             if(meterValue <= 0.25f || meterValue >= 0.8f)
             {
-                Audio gameMusic = SoundManager.GetAudio(gameMusicID);
-                gameMusic.audioSource.pitch = 1.08f;
             }
             else if(meterValue >= 0.35f || meterValue <= 0.7f)
             {
-                Audio gameMusic = SoundManager.GetAudio(gameMusicID);
-                gameMusic.audioSource.pitch = 1.0f;
             }
         }
 
@@ -605,7 +600,7 @@ public class GameManager : MonoBehaviour
                 Progress = GetInitialProgressForLevel(CurrentLevelIndex);
                 ProgressLoss = 0;
                 SetupGame(data.level_index, data.seed_value, data.players);
-                gameMusicID = SoundManager.PlayMusic(GameMusic, SoundManager.globalMusicVolume, true, true);
+                SoundManager.PlayMusic(GameMusic, SoundManager.globalMusicVolume, true, true);
                 screenMgr.TransitionScreenOn(ScreenManager.ScreenID.Game);
             }
             else
