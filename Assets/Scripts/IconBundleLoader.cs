@@ -33,8 +33,9 @@ public class IconBundleLoader : MonoBehaviour
                     }
                     
                 }
-            }
+            } 
         }
+        library.SortLibrary();
 
 
     }

@@ -138,10 +138,10 @@ public class GameManager : MonoBehaviour
         GameScreen gameScreen = screenMgr.GetGameScreen();
         gameScreen.SetMeterProgress(meterValue);
 
-        SendLevelFinished(meterValue);
+        CheckLevelFinished(meterValue);
     }
 
-    void SendLevelFinished(float meterValue)
+    void CheckLevelFinished(float meterValue)
     {
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         if (levelFinishedSent == false)

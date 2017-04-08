@@ -44,4 +44,14 @@ public class IconLibrary : MonoBehaviour
     {
         IconResources.Add(icon);
     }
+
+    public void SortLibrary()
+    {
+        IconResources.Sort(SortSpriteByName);
+    }
+
+    private int SortSpriteByName(Sprite a, Sprite b)
+    {
+        return a.name.CompareTo(b.name);
+    }
 }
