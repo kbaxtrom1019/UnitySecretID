@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class ScreenManager : MonoBehaviour
 {
@@ -13,19 +14,21 @@ public class ScreenManager : MonoBehaviour
        Spinner,
        Game,
        GameOver,
-       LevelComplete
+       LevelComplete,
+       Max
     };
 
+    public GameObject MainMenuScreenPrefab;
+    public GameObject CreateGameScreenPrefab;
+    public GameObject JoinGameScreenPrefab;
+    public GameObject LobbyScreenPrefab;
+    public GameObject OKPopupScreenPrefab;
+    public GameObject SpinnerScreenPrefab;
+    public GameObject GameScreenPrefab;
+    public GameObject GameOverScreenPrefab;
+    public GameObject LevelCompleteScreenPrefab;
 
-    public GameObject MainMenuScreen;
-    public GameObject CreateGameScreen;
-    public GameObject JoinGameScreen;
-    public GameObject LobbyScreen;
-    public GameObject OKPopupScreen;
-    public GameObject SpinnerScreen;
-    public GameObject GameScreen;
-    public GameObject GameOverScreen;
-    public GameObject LevelCompleteScreen;
+    private List<GameObject> LoadedScreens;
 
     private static ScreenManager instance;
     public void Awake()
@@ -40,15 +43,33 @@ public class ScreenManager : MonoBehaviour
             Destroy(this.gameObject);
         }
 
-        MainMenuScreen.SetActive(true);
-        CreateGameScreen.SetActive(true);
-        JoinGameScreen.SetActive(true);
-        LobbyScreen.SetActive(true);
-        OKPopupScreen.SetActive(true);
-        SpinnerScreen.SetActive(true);
-        GameScreen.SetActive(true);
-        GameOverScreen.SetActive(true);
-        LevelCompleteScreen.SetActive(true);
+        LoadedScreens = new List<GameObject>((int)ScreenID.Max);
+
+        LoadScreen(MainMenuScreenPrefab);
+        LoadScreen(CreateGameScreenPrefab);
+        LoadScreen(JoinGameScreenPrefab);
+        LoadScreen(LobbyScreenPrefab);
+        LoadScreen(OKPopupScreenPrefab);
+        LoadScreen(SpinnerScreenPrefab);
+        LoadScreen(GameScreenPrefab);
+        LoadScreen(GameOverScreenPrefab);
+        LoadScreen(LevelCompleteScreenPrefab);
+
+        //MainMenuScreen.SetActive(true);
+        //CreateGameScreen.SetActive(true);
+        //JoinGameScreen.SetActive(true);
+        //LobbyScreen.SetActive(true);
+        //OKPopupScreen.SetActive(true);
+        //SpinnerScreen.SetActive(true);
+        //GameScreen.SetActive(true);
+        //GameOverScreen.SetActive(true);
+        //LevelCompleteScreen.SetActive(true);
+    }
+
+    private void LoadScreen(GameObject prefab)
+    {
+        GameObject screen = GameObject.Instantiate(prefab);
+        LoadedScreens.Add(screen);
     }
 
     public static ScreenManager GetInstance()
@@ -68,34 +89,10 @@ public class ScreenManager : MonoBehaviour
 
     private GameObject GetScreenObj(ScreenID ID)
     {
-        switch(ID)
+        int idIndex = (int)ID;
+        if(idIndex >= 0 && idIndex < LoadedScreens.Count)
         {
-            case ScreenID.CreateGame:
-                return CreateGameScreen;
-
-            case ScreenID.JoinGame:
-                return JoinGameScreen;
-
-            case ScreenID.Lobby:
-                return LobbyScreen;
-
-            case ScreenID.MainMenu:
-                return MainMenuScreen;
-
-            case ScreenID.OKPopup:
-                return OKPopupScreen;
-
-            case ScreenID.Spinner:
-                return SpinnerScreen;
-
-            case ScreenID.Game:
-                return GameScreen;
-
-            case ScreenID.GameOver:
-                return GameOverScreen;
-
-            case ScreenID.LevelComplete:
-                return LevelCompleteScreen;
+            return LoadedScreens[idIndex];
         }
         return null;
     }

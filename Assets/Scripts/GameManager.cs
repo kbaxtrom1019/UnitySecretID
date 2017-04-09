@@ -18,8 +18,6 @@ public class GameManager : MonoBehaviour
     };
 
     public Text KeyText;
-    public GameObject TextItemPrefab;
-    public GameObject RoomListPanel;
     private bool Initalized = false;
     private GameState CurrentState = GameState.None;
     private float RefreshTimer;
@@ -87,6 +85,9 @@ public class GameManager : MonoBehaviour
         GameScreen gameScreen = screenMgr.GetGameScreen();
         gameScreen.SetIconButtonListener(GameMenu_OnIconButtonPressed);
         gameScreen.SetMenuButtonListener(GameMenu_OnClickedMenu);
+
+        OKPopupScreen okPopup = screenMgr.GetOKPopupScreen();
+        okPopup.SetOKButtonClicked(OKPopup_OnClickedOK);
     }
 
     public void Update()
@@ -584,26 +585,23 @@ public class GameManager : MonoBehaviour
 
     void AddPlayerToLobby(PlayerData player)
     {
-        GameObject item = GameObject.Instantiate(TextItemPrefab);
-        LobbyOccupant occupant = item.GetComponent<LobbyOccupant>();
-        occupant.SetPlayerNameText(player.player_name, player.player_id);
-        item.transform.SetParent(RoomListPanel.transform, false);
+        ScreenManager screenMgr = ScreenManager.GetInstance();
+        GameLobbyScreen lobbyScreen = screenMgr.GetGameLobbyScreen();
+        lobbyScreen.AddPlayer(player);
     }
 
     void SetupLobby(string roomKey, List<PlayerData> players)
     {
         ScreenManager screenMgr = ScreenManager.GetInstance();
-        KeyText.text = roomKey;
-
-        for (int i = 0; i < RoomListPanel.transform.childCount; ++i)
-        {
-            GameObject.Destroy(RoomListPanel.transform.GetChild(i).gameObject);
-        }
+        GameLobbyScreen lobbyScreen = screenMgr.GetGameLobbyScreen();
+        lobbyScreen.SetKeyText(roomKey);
+        lobbyScreen.DestoryAllOccupants();
 
         foreach (PlayerData player in players)
         {
             AddPlayerToLobby(player);
         }
+
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         onlineServices.SetRoomKey(roomKey);
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
@@ -666,7 +664,6 @@ public class GameManager : MonoBehaviour
     void UpdateLobby(List<PlayerData> players)
     {
         bool localPlayerInLobby = false;
-
         foreach (PlayerData player in players)
         {
             if (player.player_id == LocalPlayerID)
@@ -677,48 +674,9 @@ public class GameManager : MonoBehaviour
 
         if (localPlayerInLobby)
         {
-            // Remove any lost players
-            int numChildren = RoomListPanel.transform.childCount;
-            for (int i = numChildren - 1; i >= 0; --i)
-            {
-                GameObject obj = RoomListPanel.transform.GetChild(i).gameObject;
-                LobbyOccupant occupant = obj.GetComponent<LobbyOccupant>();
-                string playerID = occupant.GetPlayerID();
-                bool playerIsInList = false;
-                foreach (PlayerData player in players)
-                {
-                    if (player.player_id == playerID)
-                    {
-                        playerIsInList = true;
-                    }
-                }
-
-                if (playerIsInList == false)
-                {
-                    GameObject.Destroy(obj);
-                }
-            }
-
-            numChildren = RoomListPanel.transform.childCount;
-            // Add any new players
-            foreach (PlayerData player in players)
-            {
-                bool playerAlreadyExists = false;
-                for (int i = 0; i < numChildren && !playerAlreadyExists; ++i)
-                {
-                    GameObject obj = RoomListPanel.transform.GetChild(i).gameObject;
-                    LobbyOccupant occupant = obj.GetComponent<LobbyOccupant>();
-                    if (occupant.GetPlayerID() == player.player_id)
-                    {
-                        playerAlreadyExists = true;
-                    }
-                }
-
-                if (playerAlreadyExists == false)
-                {
-                    AddPlayerToLobby(player);
-                }
-            }
+            ScreenManager screenMgr = ScreenManager.GetInstance();
+            GameLobbyScreen lobbyScreen = screenMgr.GetGameLobbyScreen();
+            lobbyScreen.UpdatePlayerList(players);
         }
         else
         {
