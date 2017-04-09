@@ -100,54 +100,54 @@ public class ScreenManager : MonoBehaviour
         return null;
     }
 
-    public CreateGameScreen GetCreateGameScreen()
+    private T GetScreen<T>(ScreenID id) where T : BaseMenu
     {
-        GameObject obj = GetScreenObj(ScreenID.CreateGame);
+        GameObject obj = GetScreenObj(id);
         if (obj != null)
         {
-            return obj.GetComponent<CreateGameScreen>();
+            return obj.GetComponent<T>();
         }
         return null;
+    }
+
+    public MainMenuScreen GetMainMenuScreen()
+    {
+        return GetScreen<MainMenuScreen>(ScreenID.MainMenu);
+    }
+
+    public CreateGameScreen GetCreateGameScreen()
+    {
+        return GetScreen<CreateGameScreen>(ScreenID.CreateGame);
     }
 
     public JoinGameScreen GetJoinGameScreen()
     {
-        GameObject obj = GetScreenObj(ScreenID.JoinGame);
-        if (obj != null)
-        {
-            return obj.GetComponent<JoinGameScreen>();
-        }
-        return null;
+        return GetScreen<JoinGameScreen>(ScreenID.JoinGame);
+    }
+
+    public GameLobbyScreen GetGameLobbyScreen()
+    {
+        return GetScreen<GameLobbyScreen>(ScreenID.Lobby);
+    }
+
+    public GameOverScreen GetGameOverScreen()
+    {
+        return GetScreen<GameOverScreen>(ScreenID.GameOver);
     }
 
     public GameScreen GetGameScreen()
     {
-        GameObject obj = GetScreenObj(ScreenID.Game);
-        if (obj != null)
-        {
-            return obj.GetComponent<GameScreen>();
-        }
-        return null;
+        return GetScreen<GameScreen>(ScreenID.Game);
     }
 
     public OKPopupScreen GetOKPopupScreen()
     {
-        GameObject obj = GetScreenObj(ScreenID.CreateGame);
-        if (obj != null)
-        {
-            return obj.GetComponent<OKPopupScreen>();
-        }
-        return null;
+        return GetScreen<OKPopupScreen>(ScreenID.OKPopup);
     }
     
     public LevelCompleteScreen GetLevelCompleteScreen()
     {
-        GameObject obj = GetScreenObj(ScreenID.LevelComplete);
-        if (obj != null)
-        {
-            return obj.GetComponent<LevelCompleteScreen>();
-        }
-        return null;
+        return GetScreen<LevelCompleteScreen>(ScreenID.LevelComplete);
     }
 
     public void TransitionScreenOn(ScreenID id)

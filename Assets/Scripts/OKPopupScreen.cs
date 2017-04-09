@@ -2,7 +2,7 @@
 using UnityEngine.UI;
 using System.Collections;
 
-public class OKPopupScreen : MonoBehaviour
+public class OKPopupScreen : BaseMenu
 {
     public Text MessageText;
 

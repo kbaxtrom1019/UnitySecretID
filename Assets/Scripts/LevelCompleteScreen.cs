@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class LevelCompleteScreen : MonoBehaviour
+public class LevelCompleteScreen : BaseMenu
 {
     public delegate void OnLevelCompleteAnimationDone();
 

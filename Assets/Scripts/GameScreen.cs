@@ -2,11 +2,26 @@
 using System.Collections;
 using UnityEngine.UI;
 
-public class GameScreen : MonoBehaviour
+public class GameScreen : BaseMenu
 {
+    public delegate void OnIconClick(int index);
+
     public KeypadController keypadController;
     public MyIconController myIconController;
     public MeterController progressMeterController;
+
+    private OnButtonClick onMenuClicked;
+    private OnIconClick onIconClicked;
+
+    public void SetMenuButtonListener(OnButtonClick onClick)
+    {
+        onMenuClicked = onClick;
+    }
+
+    public void SetIconButtonListener(OnIconClick onClick)
+    {
+        onIconClicked = onClick;
+    }
 
     public void SetKeypadIcon(int keyIndex, Sprite image)
     {
@@ -57,15 +72,13 @@ public class GameScreen : MonoBehaviour
         GetComponent<Animator>().SetBool("IconComplete", false);
     }
 
-    // Use this for initialization
-    void Start ()
+    public void OnMenuButtonClicked()
     {
-	
-	}
-	
-	// Update is called once per frame
-	void Update ()
+        onMenuClicked();
+    }
+
+    public void OnIconButtonClicked(int index)
     {
-	
-	}
+        onIconClicked(index);
+    }
 }
