@@ -17,7 +17,6 @@ public class GameManager : MonoBehaviour
         LevelFailed
     };
 
-    public Text KeyText;
     private bool Initalized = false;
     private GameState CurrentState = GameState.None;
     private float RefreshTimer;
@@ -39,6 +38,8 @@ public class GameManager : MonoBehaviour
     private float MaxIconTime = 10.0f;
     private float myIconTimer;
 
+    private ScreenManager screenMgr;
+
     public AudioClip ButtonNavSnd;
     public AudioClip PopupErrorSnd;
     public AudioClip IconClickSnd;
@@ -49,9 +50,14 @@ public class GameManager : MonoBehaviour
     public AudioClip LobbyMusic;
     public AudioClip FailedIconSnd;
 
+    public Color ButtonColorGreen;
+    public Color ButtonColorRed;
+
     public void Start()
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+
+        screenMgr = ScreenManager.GetInstance();
+
         screenMgr.ShowSpinner("Connecting...");
         IconLibrary library = IconLibrary.GetInstance();
         IconResources = library.GetAllIcons();
@@ -67,7 +73,7 @@ public class GameManager : MonoBehaviour
 
         CreateGameScreen createScreen = screenMgr.GetCreateGameScreen();
         createScreen.SetCreateGameButtonListener(CreateMenu_OnClickedCreateGame);
-        createScreen.SetBackButtonListener(CreateMenu_OnClickedCreateGame);
+        createScreen.SetBackButtonListener(CreateMenu_OnClickedBackButton);
         createScreen.SetNameInputEndListener(CreateMenu_OnNameInputEnd);
 
         JoinGameScreen joinScreen = screenMgr.GetJoinGameScreen();
@@ -88,6 +94,16 @@ public class GameManager : MonoBehaviour
 
         OKPopupScreen okPopup = screenMgr.GetOKPopupScreen();
         okPopup.SetOKButtonClicked(OKPopup_OnClickedOK);
+
+        PauseScreen pauseScreen = screenMgr.GetPauseScreen();
+        pauseScreen.SetResumeButtonListener(PauseMenu_OnClickedResume);
+        pauseScreen.SetQuitButtonListener(PauseMenu_OnClickedQuit);
+        pauseScreen.SetMusicValueListener(PauseMenu_OnMusicValueChanged);
+        pauseScreen.SetSndEffectValueListener(PauseMenu_OnSndEffectValueChanged);
+
+        pauseScreen.SetMusicLevelValue(SoundManager.globalMusicVolume);
+        pauseScreen.SetSndEffectLevelValue(SoundManager.globalUISoundsVolume);
+
     }
 
     public void Update()
@@ -126,7 +142,7 @@ public class GameManager : MonoBehaviour
             myIconTimer -= Time.deltaTime;
             float iconTimerValue = myIconTimer / MaxIconTime;
             iconTimerValue = Mathf.Clamp01(iconTimerValue);
-            ScreenManager screenMgr = ScreenManager.GetInstance();
+            
             GameScreen gameScreen = screenMgr.GetGameScreen();
             gameScreen.SetMyIconTimer(iconTimerValue);
             if (myIconTimer <= 0.0f)
@@ -162,7 +178,7 @@ public class GameManager : MonoBehaviour
         }
 
         float meterValue = ((float)ProgressLoss + (float)Progress) / (float)MaxProgress;
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         GameScreen gameScreen = screenMgr.GetGameScreen();
         gameScreen.SetMeterProgress(meterValue);
 
@@ -216,7 +232,7 @@ public class GameManager : MonoBehaviour
 
     public void MainMenu_OnCreateGameButtonClicked()
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.MainMenu);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.CreateGame);
         SoundManager.PlayUISound(ButtonNavSnd);
@@ -225,7 +241,7 @@ public class GameManager : MonoBehaviour
 
     public void MainMenu_OnJoinGameButtonClicked()
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.MainMenu);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.JoinGame);
         SoundManager.PlayUISound(ButtonNavSnd);
@@ -233,7 +249,7 @@ public class GameManager : MonoBehaviour
 
     public void CreateMenu_OnClickedBackButton()
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.CreateGame);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
         SoundManager.PlayUISound(ButtonNavSnd);
@@ -241,7 +257,7 @@ public class GameManager : MonoBehaviour
 
     public void CreateMenu_OnNameInputEnd(string inputText)
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         JoinGameScreen joinScreen = screenMgr.GetJoinGameScreen();
         joinScreen.SetNameText(inputText);
     }
@@ -249,7 +265,7 @@ public class GameManager : MonoBehaviour
     public void CreateMenu_OnClickedCreateGame()
     {
         
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         if (onlineServices.IsConnected())
         {
@@ -275,7 +291,7 @@ public class GameManager : MonoBehaviour
 
     public void JoinMenu_OnClickedJoingame()
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         if (onlineServices.IsConnected())
         {
@@ -307,7 +323,7 @@ public class GameManager : MonoBehaviour
 
     public void JoinMenu_OnClickedBack()
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.JoinGame);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
         SoundManager.PlayUISound(ButtonNavSnd);
@@ -315,7 +331,7 @@ public class GameManager : MonoBehaviour
 
     public void JoinMenu_OnNameInputEnd(string inputText)
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         JoinGameScreen joinScreen = screenMgr.GetJoinGameScreen();
         CreateGameScreen createScreen = screenMgr.GetCreateGameScreen();
         createScreen.SetNameText(joinScreen.GetNameText());
@@ -324,7 +340,7 @@ public class GameManager : MonoBehaviour
 
     public void LobbyMenu_OnClickedBack()
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Lobby);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
@@ -335,7 +351,7 @@ public class GameManager : MonoBehaviour
 
     public void LobbyMenu_OnClickedStart()
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Lobby);
         screenMgr.ShowSpinner("Starting Game...");
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
@@ -346,7 +362,7 @@ public class GameManager : MonoBehaviour
 
     public void OKPopup_OnClickedOK()
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.OKPopup);
         SoundManager.PlayUISound(ButtonNavSnd);
     }
@@ -354,7 +370,7 @@ public class GameManager : MonoBehaviour
     public void GameOverMenu_ClickedOK()
     {
         CurrentState = GameState.None;
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         screenMgr.TransitionScreenOff(ScreenManager.ScreenID.GameOver);
         screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
         SoundManager.PlayMusic(LobbyMusic, SoundManager.globalMusicVolume, true, true);
@@ -363,16 +379,66 @@ public class GameManager : MonoBehaviour
 
     public void LevelCompleteMenu_AnimationComplete()
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
         onlineServices.RefreshLobby(OnRefreshLobbyForLevelComplete);
     }
+
+    public void PauseMenu_OnClickedResume()
+    {
+        SoundManager.PlayUISound(ButtonNavSnd);
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Pause);
+    }
+
+    public void PauseMenu_OnClickedQuit()
+    {
+        SoundManager.PlayUISound(ButtonNavSnd);
+        TwoButtonPopupScreen popup = screenMgr.GetTwoButtonPopupScreen();
+        popup.SetLeftButtonClicked(PauseMenu_OnConfirmQuitCliked);
+        popup.SetRightButtonClicked(PauseMenu_OnCancelQuitCliked);
+        screenMgr.ShowTwoButtonPopup("Are you sure you want to quit?", "Yes", "No", ButtonColorRed, ButtonColorGreen);
+    }
+
+    public void PauseMenu_OnConfirmQuitCliked()
+    {
+        SoundManager.PlayUISound(ButtonNavSnd);
+        
+        OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
+        onlineServices.LeaveLobby(null);
+        CurrentState = GameState.None;
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Game);
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.TwoButtonPopup);
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Pause);
+        screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
+        SoundManager.PlayMusic(LobbyMusic, SoundManager.globalMusicVolume, true, true);
+        SoundManager.PlayUISound(ButtonNavSnd);
+
+    }
+
+
+    public void PauseMenu_OnCancelQuitCliked()
+    {
+        SoundManager.PlayUISound(ButtonNavSnd);
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.TwoButtonPopup);
+    }
+
+    public void PauseMenu_OnMusicValueChanged(float value)
+    {
+        SoundManager.globalMusicVolume = value;
+    }
+
+    public void PauseMenu_OnSndEffectValueChanged(float value)
+    {
+        SoundManager.globalSoundsVolume = value;
+        SoundManager.globalUISoundsVolume = value;
+    }
+
 
     void OnAuthenticationCompleted(AuthenticationRequestResult result)
     {
         if (result.GetRequestResult() == AuthenticationRequestResult.RequestResult.Success)
         {
-            ScreenManager screenMgr = ScreenManager.GetInstance();
+            
             screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
             screenMgr.TransitionScreenOn(ScreenManager.ScreenID.MainMenu);
             LocalPlayerID = result.GetPlayerID();
@@ -394,7 +460,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            ScreenManager screenMgr = ScreenManager.GetInstance();
+            
             screenMgr.ShowOKPopup("An error occured while creating a game.  Please try again");
             screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
             screenMgr.TransitionScreenOn(ScreenManager.ScreenID.CreateGame);
@@ -410,7 +476,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            ScreenManager screenMgr = ScreenManager.GetInstance();
+            
             screenMgr.ShowOKPopup("An error occured while creating joining the game.  Please try again");
             screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
             screenMgr.TransitionScreenOn(ScreenManager.ScreenID.JoinGame);
@@ -420,7 +486,7 @@ public class GameManager : MonoBehaviour
 
     void OnStartGameCompleted(StartGameRequestResult result)
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         if (result.GetRequestResult() == StartGameRequestResult.RequestResult.Success)
         {
 
@@ -448,7 +514,7 @@ public class GameManager : MonoBehaviour
         {
             AllIconIndicies.Add(i);
         }
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         GameScreen gameScreen = screenMgr.GetGameScreen();
         playerIcons.Clear();
 
@@ -493,7 +559,7 @@ public class GameManager : MonoBehaviour
 
     public void GameMenu_OnIconButtonPressed(int buttonIndex)
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         GameScreen gameScreen = screenMgr.GetGameScreen();
         string iconName = gameScreen.GetKeypadIconName(buttonIndex);
 
@@ -512,6 +578,8 @@ public class GameManager : MonoBehaviour
     public void GameMenu_OnClickedMenu()
     {
         SoundManager.PlayUISound(ButtonNavSnd);
+        
+        screenMgr.TransitionScreenOn(ScreenManager.ScreenID.Pause);
     }
 
     void OnIconButtonPressedComplete(IconPressedRequestResult result)
@@ -549,7 +617,7 @@ public class GameManager : MonoBehaviour
         int iconIndex = tempPlayerIcons[randomIndex];
         Sprite img = IconResources[iconIndex];
 
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         GameScreen gameScreen = screenMgr.GetGameScreen();
         
         if(iconComplete)
@@ -585,14 +653,14 @@ public class GameManager : MonoBehaviour
 
     void AddPlayerToLobby(PlayerData player)
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         GameLobbyScreen lobbyScreen = screenMgr.GetGameLobbyScreen();
         lobbyScreen.AddPlayer(player);
     }
 
     void SetupLobby(string roomKey, List<PlayerData> players)
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         GameLobbyScreen lobbyScreen = screenMgr.GetGameLobbyScreen();
         lobbyScreen.SetKeyText(roomKey);
         lobbyScreen.DestoryAllOccupants();
@@ -619,7 +687,7 @@ public class GameManager : MonoBehaviour
             {
                 CurrentState = GameState.Game;
 
-                ScreenManager screenMgr = ScreenManager.GetInstance();
+                
                 screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Lobby);
                 if (screenMgr.IsShowing(ScreenManager.ScreenID.Spinner))
                 {
@@ -651,7 +719,7 @@ public class GameManager : MonoBehaviour
         {
             CurrentState = GameState.Game;
             RefreshLobbyRequestResult.Data data = result.GetData();
-            ScreenManager screenMgr = ScreenManager.GetInstance();
+            
             Progress = GetInitialProgressForLevel(CurrentLevelIndex);
             ProgressLoss = 0;
             SetupGame(data.level_index, data.seed_value, data.players);
@@ -674,7 +742,7 @@ public class GameManager : MonoBehaviour
 
         if (localPlayerInLobby)
         {
-            ScreenManager screenMgr = ScreenManager.GetInstance();
+            
             GameLobbyScreen lobbyScreen = screenMgr.GetGameLobbyScreen();
             lobbyScreen.UpdatePlayerList(players);
         }
@@ -686,7 +754,7 @@ public class GameManager : MonoBehaviour
 
     void OnRefreshGameComplete(RefreshGameRequestResult result)
     {
-        ScreenManager screenMgr = ScreenManager.GetInstance();
+        
         if (result.GetRequestResult() == RefreshGameRequestResult.RequestResult.Success)
         {
             RefreshGameRequestResult.Data data = result.GetData();

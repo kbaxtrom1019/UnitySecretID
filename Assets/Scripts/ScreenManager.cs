@@ -15,6 +15,8 @@ public class ScreenManager : MonoBehaviour
        Game,
        GameOver,
        LevelComplete,
+       Pause,
+       TwoButtonPopup,
        Max
     };
 
@@ -27,6 +29,8 @@ public class ScreenManager : MonoBehaviour
     public GameObject GameScreenPrefab;
     public GameObject GameOverScreenPrefab;
     public GameObject LevelCompleteScreenPrefab;
+    public GameObject PauseScreenPrefab;
+    public GameObject TwoButtonPopupScreenPrefab;
 
     private List<GameObject> LoadedScreens;
 
@@ -54,16 +58,8 @@ public class ScreenManager : MonoBehaviour
         LoadScreen(GameScreenPrefab);
         LoadScreen(GameOverScreenPrefab);
         LoadScreen(LevelCompleteScreenPrefab);
-
-        //MainMenuScreen.SetActive(true);
-        //CreateGameScreen.SetActive(true);
-        //JoinGameScreen.SetActive(true);
-        //LobbyScreen.SetActive(true);
-        //OKPopupScreen.SetActive(true);
-        //SpinnerScreen.SetActive(true);
-        //GameScreen.SetActive(true);
-        //GameOverScreen.SetActive(true);
-        //LevelCompleteScreen.SetActive(true);
+        LoadScreen(PauseScreenPrefab);
+        LoadScreen(TwoButtonPopupScreenPrefab);
     }
 
     private void LoadScreen(GameObject prefab)
@@ -142,9 +138,19 @@ public class ScreenManager : MonoBehaviour
         return GetScreen<OKPopupScreen>(ScreenID.OKPopup);
     }
     
+    public TwoButtonPopupScreen GetTwoButtonPopupScreen()
+    {
+        return GetScreen<TwoButtonPopupScreen>(ScreenID.TwoButtonPopup);
+    }
+
     public LevelCompleteScreen GetLevelCompleteScreen()
     {
         return GetScreen<LevelCompleteScreen>(ScreenID.LevelComplete);
+    }
+
+    public PauseScreen GetPauseScreen()
+    {
+        return GetScreen<PauseScreen>(ScreenID.Pause);
     }
 
     public void TransitionScreenOn(ScreenID id)
@@ -165,12 +171,25 @@ public class ScreenManager : MonoBehaviour
         }
     }
 
-    public void ShowOKPopup(string Msg)
+    public void ShowOKPopup(string msg)
     {
         GameObject popup = GetScreenObj(ScreenID.OKPopup);
         OKPopupScreen okPopup = popup.GetComponent<OKPopupScreen>();
-        okPopup.SetMessageText(Msg);
+        okPopup.SetMessageText(msg);
         TransitionScreenOn(ScreenID.OKPopup);
+    }
+
+    public void ShowTwoButtonPopup(string msg, string leftText, string rightText, Color leftColor, Color rightColor)
+    {
+        GameObject popup = GetScreenObj(ScreenID.TwoButtonPopup);
+        TwoButtonPopupScreen twoButtonPopup = popup.GetComponent<TwoButtonPopupScreen>();
+        twoButtonPopup.SetMessageText(msg);
+        twoButtonPopup.SetLeftButtonText(leftText);
+        twoButtonPopup.SetRightButtonText(rightText);
+        twoButtonPopup.SetLeftButtonColor(leftColor);
+        twoButtonPopup.SetRightButtonColor(rightColor);
+        TransitionScreenOn(ScreenID.TwoButtonPopup);
+
     }
 
     public void ShowSpinner(string Msg)

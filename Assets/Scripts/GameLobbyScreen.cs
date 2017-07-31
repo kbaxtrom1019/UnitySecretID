@@ -96,6 +96,6 @@ public class GameLobbyScreen : BaseMenu
 
     public void SetKeyText(string text)
     {
-
+        KeyText.text = text;
     }
 }
