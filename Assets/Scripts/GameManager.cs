@@ -9,6 +9,9 @@ public class GameManager : MonoBehaviour
     public enum GameState
     {
         None,
+        EstablishignConnection,
+        FailedConnection,
+        Connected,
         Lobby,
         RefreshingLobby,
         Game,
@@ -20,6 +23,7 @@ public class GameManager : MonoBehaviour
     private bool Initalized = false;
     private GameState CurrentState = GameState.None;
     private float RefreshTimer;
+    private float ConnectionTimer;
     private const float RefreshTime = 0.5f;
     private string LocalPlayerID = null;
     private List<Sprite> IconResources;
@@ -37,6 +41,7 @@ public class GameManager : MonoBehaviour
     private bool levelFinishedSent = false;
     private float MaxIconTime = 10.0f;
     private float myIconTimer;
+    private const float MaxConnectionTimer = 15.0f;
 
     private ScreenManager screenMgr;
 
@@ -50,8 +55,8 @@ public class GameManager : MonoBehaviour
     public AudioClip LobbyMusic;
     public AudioClip FailedIconSnd;
 
-    public Color ButtonColorGreen;
-    public Color ButtonColorRed;
+    public Color ButtonColorConfirmQuit;
+    public Color ButtonColorCancelQuit;
 
     public void Start()
     {
@@ -92,8 +97,8 @@ public class GameManager : MonoBehaviour
         gameScreen.SetIconButtonListener(GameMenu_OnIconButtonPressed);
         gameScreen.SetMenuButtonListener(GameMenu_OnClickedMenu);
 
-        OKPopupScreen okPopup = screenMgr.GetOKPopupScreen();
-        okPopup.SetOKButtonClicked(OKPopup_OnClickedOK);
+        //SingleButtonPopupScreen okPopup = screenMgr.GetOKPopupScreen();
+        //okPopup.SetOKButtonClicked(OKPopup_OnClickedOK);
 
         PauseScreen pauseScreen = screenMgr.GetPauseScreen();
         pauseScreen.SetResumeButtonListener(PauseMenu_OnClickedResume);
@@ -103,6 +108,8 @@ public class GameManager : MonoBehaviour
 
         pauseScreen.SetMusicLevelValue(SoundManager.globalMusicVolume);
         pauseScreen.SetSndEffectLevelValue(SoundManager.globalUISoundsVolume);
+        CurrentState = GameState.EstablishignConnection;
+        ConnectionTimer = 0.0f;
 
     }
 
@@ -113,6 +120,20 @@ public class GameManager : MonoBehaviour
         {
             onlineServices.Authenticate(OnAuthenticationCompleted);
             Initalized = true;
+            CurrentState = GameState.Connected;
+        }
+
+        if(CurrentState == GameState.EstablishignConnection)
+        {
+            ConnectionTimer += Time.deltaTime;
+            if(ConnectionTimer >= MaxConnectionTimer)
+            {
+                CurrentState = GameState.FailedConnection;
+                screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
+                SingleButtonPopupScreen popup = screenMgr.GetSingleButtonPopupScreen();
+                popup.SetOKButtonClicked(FailedConnection_OnClickRetry);
+                screenMgr.ShowSingleButtonPopup("Failed to connect to online services, please try again", "Retry");
+            }
         }
 
         if (CurrentState == GameState.Lobby)
@@ -272,7 +293,9 @@ public class GameManager : MonoBehaviour
             CreateGameScreen createScreen = screenMgr.GetCreateGameScreen();
             if (createScreen.GetNameText().Length <= 0)
             {
-                screenMgr.ShowOKPopup("Please enter a name first");
+                SingleButtonPopupScreen popup = screenMgr.GetSingleButtonPopupScreen();
+                popup.SetOKButtonClicked(OKPopup_OnClickedOK);
+                screenMgr.ShowSingleButtonPopup("Please enter a name first");
                 SoundManager.PlayUISound(PopupErrorSnd);
             }
             else
@@ -298,12 +321,16 @@ public class GameManager : MonoBehaviour
             JoinGameScreen joinScreen = screenMgr.GetJoinGameScreen();
             if (joinScreen.GetNameText().Length <= 0)
             {
-                screenMgr.ShowOKPopup("Please enter a name first");
+                SingleButtonPopupScreen popup = screenMgr.GetSingleButtonPopupScreen();
+                popup.SetOKButtonClicked(OKPopup_OnClickedOK);
+                screenMgr.ShowSingleButtonPopup("Please enter a name first");
                 SoundManager.PlayUISound(PopupErrorSnd);
             }
             else if (joinScreen.GetRoomKeyText().Length <= 0)
             {
-                screenMgr.ShowOKPopup("Please enter a room key first");
+                SingleButtonPopupScreen popup = screenMgr.GetSingleButtonPopupScreen();
+                popup.SetOKButtonClicked(OKPopup_OnClickedOK);
+                screenMgr.ShowSingleButtonPopup("Please enter a room key first");
                 SoundManager.PlayUISound(PopupErrorSnd);
             }
             else
@@ -362,9 +389,19 @@ public class GameManager : MonoBehaviour
 
     public void OKPopup_OnClickedOK()
     {
-        
-        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.OKPopup);
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.SingleButtonPopup);
         SoundManager.PlayUISound(ButtonNavSnd);
+    }
+
+    public void FailedConnection_OnClickRetry()
+    {
+        screenMgr.TransitionScreenOff(ScreenManager.ScreenID.SingleButtonPopup);
+        SoundManager.PlayUISound(ButtonNavSnd);
+        OnlineServicesManger onlineServices = OnlineServicesManger.GetInstance();
+        onlineServices.Reconnect();
+        CurrentState = GameState.EstablishignConnection;
+        ConnectionTimer = 0.0f;
+        screenMgr.ShowSpinner("Connecting...");
     }
 
     public void GameOverMenu_ClickedOK()
@@ -396,7 +433,7 @@ public class GameManager : MonoBehaviour
         TwoButtonPopupScreen popup = screenMgr.GetTwoButtonPopupScreen();
         popup.SetLeftButtonClicked(PauseMenu_OnConfirmQuitCliked);
         popup.SetRightButtonClicked(PauseMenu_OnCancelQuitCliked);
-        screenMgr.ShowTwoButtonPopup("Are you sure you want to quit?", "Yes", "No", ButtonColorRed, ButtonColorGreen);
+        screenMgr.ShowTwoButtonPopup("Are you sure you want to quit?", "Quit", "Cancel", ButtonColorConfirmQuit, ButtonColorCancelQuit);
     }
 
     public void PauseMenu_OnConfirmQuitCliked()
@@ -460,8 +497,9 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            
-            screenMgr.ShowOKPopup("An error occured while creating a game.  Please try again");
+            SingleButtonPopupScreen popup = screenMgr.GetSingleButtonPopupScreen();
+            popup.SetOKButtonClicked(OKPopup_OnClickedOK);
+            screenMgr.ShowSingleButtonPopup("An error occured while creating a game.  Please try again");
             screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
             screenMgr.TransitionScreenOn(ScreenManager.ScreenID.CreateGame);
         }
@@ -476,8 +514,9 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            
-            screenMgr.ShowOKPopup("An error occured while creating joining the game.  Please try again");
+            SingleButtonPopupScreen popup = screenMgr.GetSingleButtonPopupScreen();
+            popup.SetOKButtonClicked(OKPopup_OnClickedOK);
+            screenMgr.ShowSingleButtonPopup("An error occured while creating joining the game.  Please try again");
             screenMgr.TransitionScreenOff(ScreenManager.ScreenID.Spinner);
             screenMgr.TransitionScreenOn(ScreenManager.ScreenID.JoinGame);
             SoundManager.PlayUISound(PopupErrorSnd);
@@ -493,7 +532,9 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            screenMgr.ShowOKPopup("Error starting game.  Please try again");
+            SingleButtonPopupScreen popup = screenMgr.GetSingleButtonPopupScreen();
+            popup.SetOKButtonClicked(OKPopup_OnClickedOK);
+            screenMgr.ShowSingleButtonPopup("Error starting game.  Please try again");
         }
     }
 

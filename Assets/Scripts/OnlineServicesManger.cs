@@ -51,6 +51,10 @@ public class OnlineServicesManger : MonoBehaviour
         return GS.Available;
     }
 
+    public void Reconnect()
+    {
+        GS.Reconnect();
+    }
     public bool IsAuthenticated()
     {
         return GS.Authenticated;
@@ -269,12 +273,14 @@ public class OnlineServicesManger : MonoBehaviour
     {
         GUILayout.BeginHorizontal();
 
-        GUILayout.Label((GS.Available ? "AVAILABLE" : "NOT AVAILABLE"), GUILayout.Width(itemWidth), GUILayout.Height(itemHeight));
-        GUILayout.Label(("SDK Version: " + GS.Version.ToString()), GUILayout.Width(itemWidth), GUILayout.Height(itemHeight));
+        GUIStyle style = new GUIStyle();
+        style.normal.textColor = Color.black;
+        GUILayout.Label((GS.Available ? "AVAILABLE" : "NOT AVAILABLE"), style, GUILayout.Width(itemWidth), GUILayout.Height(itemHeight));
+        GUILayout.Label(("SDK Version: " + GS.Version.ToString()), style, GUILayout.Width(itemWidth), GUILayout.Height(itemHeight));
 
         GUILayout.EndHorizontal();
 
-        GUILayout.Label((GS.Authenticated ? "AUTHENTICATED" : "NOT AUTHENTICATED"), GUILayout.Width(itemWidth), GUILayout.Height(itemHeight));
+        GUILayout.Label((GS.Authenticated ? "AUTHENTICATED" : "NOT AUTHENTICATED"), style, GUILayout.Width(itemWidth), GUILayout.Height(itemHeight));
 
     }
 }

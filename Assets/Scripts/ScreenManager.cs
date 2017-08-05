@@ -10,7 +10,7 @@ public class ScreenManager : MonoBehaviour
        CreateGame,
        JoinGame,
        Lobby,
-       OKPopup,
+       SingleButtonPopup,
        Spinner,
        Game,
        GameOver,
@@ -24,7 +24,7 @@ public class ScreenManager : MonoBehaviour
     public GameObject CreateGameScreenPrefab;
     public GameObject JoinGameScreenPrefab;
     public GameObject LobbyScreenPrefab;
-    public GameObject OKPopupScreenPrefab;
+    public GameObject SingleButtonPopupScreenPrefab;
     public GameObject SpinnerScreenPrefab;
     public GameObject GameScreenPrefab;
     public GameObject GameOverScreenPrefab;
@@ -53,7 +53,7 @@ public class ScreenManager : MonoBehaviour
         LoadScreen(CreateGameScreenPrefab);
         LoadScreen(JoinGameScreenPrefab);
         LoadScreen(LobbyScreenPrefab);
-        LoadScreen(OKPopupScreenPrefab);
+        LoadScreen(SingleButtonPopupScreenPrefab);
         LoadScreen(SpinnerScreenPrefab);
         LoadScreen(GameScreenPrefab);
         LoadScreen(GameOverScreenPrefab);
@@ -133,9 +133,9 @@ public class ScreenManager : MonoBehaviour
         return GetScreen<GameScreen>(ScreenID.Game);
     }
 
-    public OKPopupScreen GetOKPopupScreen()
+    public SingleButtonPopupScreen GetSingleButtonPopupScreen()
     {
-        return GetScreen<OKPopupScreen>(ScreenID.OKPopup);
+        return GetScreen<SingleButtonPopupScreen>(ScreenID.SingleButtonPopup);
     }
     
     public TwoButtonPopupScreen GetTwoButtonPopupScreen()
@@ -171,12 +171,13 @@ public class ScreenManager : MonoBehaviour
         }
     }
 
-    public void ShowOKPopup(string msg)
+    public void ShowSingleButtonPopup(string msg, string buttonText=null)
     {
-        GameObject popup = GetScreenObj(ScreenID.OKPopup);
-        OKPopupScreen okPopup = popup.GetComponent<OKPopupScreen>();
+        GameObject popup = GetScreenObj(ScreenID.SingleButtonPopup);
+        SingleButtonPopupScreen okPopup = popup.GetComponent<SingleButtonPopupScreen>();
         okPopup.SetMessageText(msg);
-        TransitionScreenOn(ScreenID.OKPopup);
+        okPopup.SetButtonText(buttonText != null ? buttonText : "OK");
+        TransitionScreenOn(ScreenID.SingleButtonPopup);
     }
 
     public void ShowTwoButtonPopup(string msg, string leftText, string rightText, Color leftColor, Color rightColor)
